@@ -189,6 +189,10 @@ pub fn binding(text: &str) -> Binding {
 
 /// A block read as the analysis reads it.
 pub fn stmts(block: &[Statement]) -> Vec<StmtAt<'_>> {
+    super::profile::time(super::profile::STMTS, || stmts_uncounted(block))
+}
+
+fn stmts_uncounted(block: &[Statement]) -> Vec<StmtAt<'_>> {
     let mut out: Vec<StmtAt<'_>> = Vec::new();
     for s in block {
         // `var/a, b = 1`: dm-syntax splits the line into one Var per part; the later parts' headers drop the `var` spelling and continue
@@ -343,13 +347,13 @@ pub fn walk_form<'v>(fm: Form<'v>, node: Option<&'v Expr>, at: Site, base: usize
         Form::Ternary { cond, then_value, else_value } => vec![*cond, *then_value, *else_value],
         Form::Chain(_) => Vec::new(),
     };
-    let chain = if let Form::Chain(c) = &fm { Some(c.clone()) } else { None };
-    f(&Visit { form: fm, node, site: at });
+    let visit = Visit { form: fm, node, site: at };
+    f(&visit);
     for c in children {
         walk_expr_at(c, base, f);
     }
-    if let Some(c) = chain {
-        walk_chain(&c, base, f);
+    if let Form::Chain(c) = &visit.form {
+        walk_chain(c, base, f);
     }
 }
 
@@ -361,7 +365,11 @@ fn walk_chain(c: &Chain<'_>, base: usize, f: &mut dyn FnMut(&Visit<'_>)) {
     };
     match &c.root {
         Root::Group(e) => walk_expr_at(e, base, f),
-        Root::Literal(text) => {
+        // Only a string with a `[` can interpolate: the rest need no decoding here.
+        Root::Literal(text) if text.starts_with('"') || text.starts_with('{') => {
+            if !text.contains('[') {
+                return walk_hops(c, base, f);
+            }
             if let Lit::Interp(interp) = literal(text) {
                 for (part, _) in interp_parts(&interp, base + c.root_expr.span.start) {
                     if let Some((e, at)) = part {
@@ -399,12 +407,20 @@ fn walk_chain(c: &Chain<'_>, base: usize, f: &mut dyn FnMut(&Visit<'_>)) {
                 walk_expr_at(e, base, f);
             }
         }
-        Root::Ident(_) | Root::Opaque(_) => {}
+        Root::Ident(_) | Root::Opaque(_) | Root::Literal(_) => {}
     }
+    walk_hops(c, base, f);
+}
+
+fn walk_hops(c: &Chain<'_>, base: usize, f: &mut dyn FnMut(&Visit<'_>)) {
     for h in &c.hops {
         match h {
             Hop::Index { index, .. } => walk_expr_at(index, base, f),
-            Hop::Call { args, .. } => each(args, f),
+            Hop::Call { args, .. } => {
+                for a in args.iter() {
+                    walk_expr_at(a, base, f);
+                }
+            }
             _ => {}
         }
     }

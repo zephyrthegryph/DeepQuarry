@@ -1602,7 +1602,8 @@ impl<'a, 'e> Walk<'a, 'e> {
     }
 
     fn block(&mut self, fr: &mut Frame<'a>, b: &[Statement]) {
-        for st in stmts(b) {
+        let read = self.eng.sem.m().stmts(b);
+        for st in read.iter() {
             self.line = self.eng.sem.line(Some(st.site));
             self.stmt(fr, &st.stmt);
         }

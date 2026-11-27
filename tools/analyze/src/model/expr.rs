@@ -196,6 +196,10 @@ fn in_form<'a>(lhs: &'a Expr, rhs: &'a Expr) -> Option<Root<'a>> {
 }
 
 fn chain_of(e: &Expr) -> Chain<'_> {
+    super::profile::time(super::profile::CHAIN, || chain_of_uncounted(e))
+}
+
+fn chain_of_uncounted(e: &Expr) -> Chain<'_> {
     let mut hops = Vec::new();
     let mut cur = e;
     loop {
@@ -401,6 +405,23 @@ pub enum Lit {
 }
 
 pub fn literal(text: &str) -> Lit {
+    super::profile::time(super::profile::LITERAL, || literal_uncounted(text))
+}
+
+fn literal_uncounted(text: &str) -> Lit {
+    // The common tokens: a decimal integer, a plain string (no escape, no interpolation, no macro). The rest go to the decoder.
+    let b = text.as_bytes();
+    if !b.is_empty() && b.iter().all(|c| c.is_ascii_digit()) && b.len() < 10 {
+        if let Ok(v) = text.parse::<i32>() {
+            // BYOND reads integers past 2^24 as floats; small ones are exact either way.
+            if v < (1 << 24) {
+                return Lit::Int(v);
+            }
+        }
+    }
+    if b.len() >= 2 && b[0] == b'"' && b[b.len() - 1] == b'"' && !text[1..text.len() - 1].contains(['\\', '[', '"']) {
+        return Lit::String(text[1..text.len() - 1].to_string());
+    }
     if text == "null" {
         return Lit::Null;
     }

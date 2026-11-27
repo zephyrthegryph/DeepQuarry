@@ -119,7 +119,7 @@ pub struct Sem {
     pub(crate) layering_owner_defs: HashMap<String, Vec<String>>,
     /// Files whose definitions (locations, bodies) the analysis consulted: the footprint a cached result depends on (see
     /// `sem::incremental`). Every file-attributed answer goes through [`Sem::rel`] or the def index, which record here.
-    touched_rel: std::sync::Mutex<std::collections::HashSet<String>>,
+    touched_rel: std::sync::RwLock<std::collections::HashSet<Arc<str>>>,
     /// Built from the real `.dme` (not a partial or fixture model): its walks may be kept between runs (`walk_cache`).
     full: bool,
     /// The front end's inputs (every file's path and bytes, in include order) and each file's content key: a proc body digests as its
@@ -210,39 +210,59 @@ impl Sem {
         }
         let env_key = if real { u128::from_le_bytes(env.finalize().as_bytes()[..16].try_into().unwrap()) } else { 0 };
         let line = |site: Option<Site>| site.and_then(|s| model.line(s));
+        // Each type's facts on every core (sites are looked up in the front end's line map), merged in type order.
+        struct TypeFacts {
+            path: String,
+            loc: Option<String>,
+            defs: Vec<(String, u32, String)>,
+            owners: Vec<String>,
+        }
+        let types: Vec<Ty<'_>> = model.types().collect();
+        let facts: Vec<TypeFacts> = {
+            use rayon::prelude::*;
+            types
+                .par_iter()
+                .map(|ty| {
+                    let path = ty.path().to_string();
+                    let loc = line(ty.site()).map(|(file, _)| file);
+                    let mut defs = Vec::new();
+                    let mut owners: Vec<String> = Vec::new();
+                    for name in ty.var_names() {
+                        let members: Vec<_> = ty.own_vars_named(&name).collect();
+                        let declaration = members.iter().find(|m| m.declares()).and_then(|m| line(m.site()));
+                        if let Some((file, l)) = &declaration {
+                            defs.push((file.clone(), *l, name.clone()));
+                        }
+                        // The var's value (its last assignment) and its declaration on this type.
+                        let value = members.last().and_then(|m| line(m.site()));
+                        for (file, _) in value.into_iter().chain(declaration) {
+                            if tree.get(&file).is_some() {
+                                owners.push(file);
+                            }
+                        }
+                    }
+                    for name in ty.proc_names() {
+                        for p in ty.proc_definitions(name) {
+                            if let Some((file, l)) = line(p.site()) {
+                                defs.push((file, l, name.to_string()));
+                            }
+                        }
+                    }
+                    TypeFacts { path, loc, defs, owners }
+                })
+                .collect()
+        };
         let mut def_index: HashMap<String, Vec<(u32, String, String)>> = HashMap::new();
         let mut type_loc: HashMap<String, String> = HashMap::new();
         let mut owner_locations: Vec<(String, Vec<String>)> = Vec::new();
-        for ty in model.types() {
-            let path = ty.path().to_string();
-            if let Some((file, _)) = line(ty.site()) {
-                type_loc.insert(path.clone(), file);
+        for f in facts {
+            if let Some(file) = f.loc {
+                type_loc.insert(f.path.clone(), file);
             }
-            let mut owners: Vec<String> = Vec::new();
-            for name in ty.var_names() {
-                let members: Vec<_> = ty.own_vars_named(&name).collect();
-                if let Some(d) = members.iter().find(|m| m.declares()) {
-                    if let Some((file, l)) = line(d.site()) {
-                        def_index.entry(file).or_default().push((l, path.clone(), name.clone()));
-                    }
-                }
-                // The var's value (its last assignment) and its declaration on this type.
-                let value = members.last().and_then(|m| line(m.site()));
-                let declaration = members.iter().find(|m| m.declares()).and_then(|m| line(m.site()));
-                for (file, _) in value.into_iter().chain(declaration) {
-                    if tree.get(&file).is_some() {
-                        owners.push(file);
-                    }
-                }
+            for (file, l, name) in f.defs {
+                def_index.entry(file).or_default().push((l, f.path.clone(), name));
             }
-            for name in ty.proc_names() {
-                for p in ty.proc_definitions(name) {
-                    if let Some((file, l)) = line(p.site()) {
-                        def_index.entry(file).or_default().push((l, path.clone(), name.to_string()));
-                    }
-                }
-            }
-            owner_locations.push((path, owners));
+            owner_locations.push((f.path, f.owners));
         }
         for v in def_index.values_mut() {
             v.sort();
@@ -287,10 +307,10 @@ impl Sem {
 
     /// The repo-relative file `site` is in (`""` for none), recorded in the footprint.
     pub fn rel(&self, site: Option<Site>) -> String {
-        match site.and_then(|s| self.model.line(s)) {
-            Some((file, _)) => {
-                self.touch_rel(&file);
-                file
+        match site.and_then(|s| self.model.file_arc(s)) {
+            Some(file) => {
+                self.touch_arc(&file);
+                file.to_string()
             }
             None => String::new(),
         }
@@ -298,21 +318,31 @@ impl Sem {
 
     /// The file and line `site` is at, without recording it in the footprint.
     pub(crate) fn file_of(&self, site: Option<Site>) -> Option<String> {
-        site.and_then(|s| self.model.line(s)).map(|(f, _)| f)
+        site.and_then(|s| self.model.file_arc(s)).map(|f| f.to_string())
     }
 
     /// The line `site` is on (0 for none).
     pub fn line(&self, site: Option<Site>) -> u32 {
-        site.and_then(|s| self.model.line(s)).map_or(0, |(_, l)| l)
+        site.and_then(|s| self.model.line_no(s)).unwrap_or(0)
+    }
+
+    fn touch_arc(&self, file: &Arc<str>) {
+        if self.touched_rel.read().unwrap_or_else(|e| e.into_inner()).contains(file) {
+            return;
+        }
+        self.touched_rel.write().unwrap_or_else(|e| e.into_inner()).insert(file.clone());
     }
 
     fn touch_rel(&self, file: &str) {
-        self.touched_rel.lock().unwrap().insert(file.to_string());
+        if self.touched_rel.read().unwrap_or_else(|e| e.into_inner()).contains(file) {
+            return;
+        }
+        self.touched_rel.write().unwrap_or_else(|e| e.into_inner()).insert(Arc::from(file));
     }
 
     /// Every file the analysis consulted so far (repo-relative, sorted).
     pub fn footprint(&self) -> Vec<String> {
-        let out: std::collections::BTreeSet<String> = self.touched_rel.lock().unwrap().iter().cloned().collect();
+        let out: std::collections::BTreeSet<String> = self.touched_rel.read().unwrap_or_else(|e| e.into_inner()).iter().map(|f| f.to_string()).collect();
         out.into_iter().collect()
     }
 

@@ -80,34 +80,36 @@ impl<'m> Proc<'m> {
         self.member().and_then(|m| m.site())
     }
 
-    /// The definitions of this name on this definition's type, and this one's place among them.
-    fn place(&self) -> (Vec<Proc<'m>>, usize) {
-        let list = self.owner().proc_definitions(self.name());
-        let idx = list.iter().position(|p| p.same(self)).unwrap_or(0);
-        (list, idx)
+    /// How many definitions of this name its type has, and this one's place among them (the builtin first, then the code's).
+    fn place(&self) -> (usize, usize) {
+        let owner = self.owner();
+        let builtin = owner.builtin_proc(self.name()).is_some() as usize;
+        let own = owner.own_proc_ids(self.name());
+        let idx = match self {
+            Proc::Builtin { .. } => 0,
+            Proc::Code(m) => builtin + own.iter().position(|id| *id == m.id).unwrap_or(0),
+        };
+        (builtin + own.len(), idx)
     }
 
-    fn same(&self, other: &Proc<'_>) -> bool {
-        match (self, other) {
-            (Proc::Builtin { owner: a, name: n, .. }, Proc::Builtin { owner: b, name: m, .. }) => a.id == b.id && n == m,
-            (Proc::Code(a), Proc::Code(b)) => a.id == b.id,
-            _ => false,
-        }
+    /// The definition at `idx` on this definition's type.
+    fn at(&self, idx: usize) -> Option<Proc<'m>> {
+        self.owner().definition_at(self.name(), idx)
     }
 
     /// The definition this one overrides: the previous one on the same type, else the one the name resolves to from the parent.
     pub fn parent_proc(&self) -> Option<Proc<'m>> {
-        let (list, idx) = self.place();
+        let (_, idx) = self.place();
         if idx > 0 {
-            return list.get(idx - 1).copied();
+            return self.at(idx - 1);
         }
         self.owner().parent()?.proc(self.name())
     }
 
     /// Whether this is the last definition on its type (the one callers on the type reach).
     pub fn is_last(&self) -> bool {
-        let (list, idx) = self.place();
-        idx + 1 == list.len()
+        let (len, idx) = self.place();
+        idx + 1 == len
     }
 
     /// The index among the type's definitions of this name.
@@ -138,12 +140,40 @@ impl<'m> Proc<'m> {
 impl<'m> Ty<'m> {
     /// This type's definitions of `name`, in the order they override one another.
     pub fn proc_definitions(&self, name: &str) -> Vec<Proc<'m>> {
+        super::profile::time(super::profile::PROC_DEFS, || self.proc_definitions_uncounted(name))
+    }
+
+    fn proc_definitions_uncounted(&self, name: &str) -> Vec<Proc<'m>> {
         let mut out = Vec::new();
-        if let Some((n, p)) = builtins::get().procs.get(self.path()).and_then(|l| l.iter().find(|(n, _)| n == name)) {
-            out.push(Proc::Builtin { owner: *self, name: n.as_str(), proc: p });
+        if let Some(b) = self.builtin_proc(name) {
+            out.push(b);
         }
         out.extend(self.own_procs_named(name).map(Proc::Code));
         out
+    }
+
+    /// BYOND's builtin definition of `name` on this type, when it has one.
+    fn builtin_proc(&self, name: &str) -> Option<Proc<'m>> {
+        let (n, p) = builtins::get().procs.get(self.path())?.iter().find(|(n, _)| n == name)?;
+        Some(Proc::Builtin { owner: *self, name: n.as_str(), proc: p })
+    }
+
+    /// The definition at `idx` among this type's definitions of `name`.
+    fn definition_at(&self, name: &str, idx: usize) -> Option<Proc<'m>> {
+        let builtin = self.builtin_proc(name);
+        match (builtin, idx) {
+            (Some(b), 0) => Some(b),
+            (Some(_), i) => self.own_proc_ids(name).get(i - 1).map(|&id| Proc::Code(self.member(id))),
+            (None, i) => self.own_proc_ids(name).get(i).map(|&id| Proc::Code(self.member(id))),
+        }
+    }
+
+    /// The last definition of `name` on this type.
+    fn last_definition(&self, name: &str) -> Option<Proc<'m>> {
+        match self.own_proc_ids(name).last() {
+            Some(&id) => Some(Proc::Code(self.member(id))),
+            None => self.builtin_proc(name),
+        }
     }
 
     /// Every proc name with definitions on this type, builtins first (table order), then by first definition.
@@ -162,10 +192,11 @@ impl<'m> Ty<'m> {
 
     /// What `name` resolves to from this type: the last definition on the nearest type (this one first) that has any.
     pub fn proc(&self, name: &str) -> Option<Proc<'m>> {
+        super::profile::count(super::profile::PROC_RESOLVE);
         let mut cur = Some(*self);
         while let Some(t) = cur {
-            if let Some(p) = t.proc_definitions(name).last() {
-                return Some(*p);
+            if let Some(p) = t.last_definition(name) {
+                return Some(p);
             }
             cur = t.parent();
         }

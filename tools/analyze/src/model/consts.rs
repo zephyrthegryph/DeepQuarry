@@ -457,6 +457,14 @@ impl VarDeclaration {
 impl<'m> Ty<'m> {
     /// The declaration of `name` on this type or the nearest parent that declares it.
     pub fn var_declaration(&self, name: &str) -> Option<VarDeclaration> {
+        super::profile::time(super::profile::VAR_DECL, || self.var_declaration_uncounted(name))
+    }
+
+    fn var_declaration_uncounted(&self, name: &str) -> Option<VarDeclaration> {
+        self.m_ref().remembered_declaration(self.id, name, || self.find_var_declaration(name))
+    }
+
+    fn find_var_declaration(&self, name: &str) -> Option<VarDeclaration> {
         let mut cur = Some(*self);
         while let Some(t) = cur {
             if let Some(m) = t.own_vars_named(name).find(|m| m.declares()) {

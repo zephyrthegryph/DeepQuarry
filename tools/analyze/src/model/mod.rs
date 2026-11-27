@@ -12,6 +12,7 @@
 pub mod builtins;
 pub mod consts;
 pub mod procs;
+pub mod profile;
 pub mod expr;
 pub mod walk;
 
@@ -32,6 +33,9 @@ pub struct Site(pub u32);
 
 /// The front end's declarations, typed bodies and sites, indexed for analysis.
 pub struct Model {
+    /// Each body block read as statements (`walk::stmts`), by its address: the walks read the same blocks over and over. Declared first so
+    /// it is dropped before the bodies it borrows from (see [`Model::stmts`]).
+    blocks: Vec<std::sync::RwLock<HashMap<(usize, usize), Arc<Vec<walk::StmtAt<'static>>>>>>,
     rev: FrontendRevision,
     /// Each var's initializer, parsed from its declaration item, with the expanded offset its spans are relative to.
     initializers: std::sync::OnceLock<HashMap<MemberId, (dm_syntax::Expr, usize)>>,
@@ -53,6 +57,8 @@ pub struct Model {
     type_sites: HashMap<Arc<str>, Site>,
     /// Each type's last `parent_type = /x` assignment (the semantic tree holds the parent, not the assignment).
     parent_sites: HashMap<Arc<str>, Site>,
+    /// Each (type, var name)'s nearest declaration, once asked.
+    declarations: Vec<std::sync::RwLock<HashMap<(TypeId, dm_ir::SymbolId), Option<consts::VarDeclaration>>>>,
     /// Every site asked about so far: its file, line and column.
     sites: Vec<std::sync::RwLock<HashMap<u32, Option<(Arc<str>, u32, u32)>>>>,
     /// Each proc's parameters, parsed from its header when first asked.
@@ -130,10 +136,12 @@ impl Model {
             type_blocks(chunk.items(), "/", &mut sites);
         }
         let model = Model {
+            blocks: (0..SITE_SHARDS).map(|_| Default::default()).collect(),
             bodies: std::sync::OnceLock::new(),
             initializers: std::sync::OnceLock::new(),
             params: Default::default(),
             sites: (0..SITE_SHARDS).map(|_| Default::default()).collect(),
+            declarations: (0..SITE_SHARDS).map(|_| Default::default()).collect(),
             folded: std::sync::OnceLock::new(),
             rev,
             root: root.to_path_buf(),
@@ -243,17 +251,59 @@ impl Model {
         self.located(site).map(|(f, l, _)| (f.to_string(), l))
     }
 
+    /// Only the line of `site` (no file name allocated).
+    pub fn line_no(&self, site: Site) -> Option<u32> {
+        self.located(site).map(|(_, l, _)| l)
+    }
+
+    /// The file of `site`, shared.
+    pub fn file_arc(&self, site: Site) -> Option<Arc<str>> {
+        self.located(site).map(|(f, _, _)| f)
+    }
+
     /// Like [`Model::line`], with the column.
     pub fn line_column(&self, site: Site) -> Option<(String, u32, u32)> {
         self.located(site).map(|(f, l, c)| (f.to_string(), l, c))
     }
 
+    /// `block` read as statements ([`walk::stmts`]), remembered by its address.
+    ///
+    /// `block` must be part of a body of this model (a proc's [`Member::body`] or a block nested in one): the remembered statements borrow
+    /// from it, and the model keeps every body alive (and unmoved: each is an `Arc`) for as long as the remembered statements exist.
+    pub fn stmts<'m>(&'m self, block: &'m [dm_syntax::Statement]) -> Arc<Vec<walk::StmtAt<'m>>> {
+        let key = (block.as_ptr() as usize, block.len());
+        let shard = &self.blocks[key.0.wrapping_mul(0x9E37_79B9) >> 26 & (SITE_SHARDS - 1)];
+        if let Some(hit) = shard.read().unwrap_or_else(|e| e.into_inner()).get(&key) {
+            return hit.clone();
+        }
+        let read: Vec<walk::StmtAt<'m>> = walk::stmts(block);
+        // SAFETY: `read` borrows from `block`, which (the contract above) lives in a body this model owns and outlives the cache: `blocks`
+        // is dropped first, and the statements are handed out with the model's borrow (`'m`), never longer.
+        let stored: Arc<Vec<walk::StmtAt<'static>>> = Arc::new(unsafe { std::mem::transmute::<Vec<walk::StmtAt<'m>>, Vec<walk::StmtAt<'static>>>(read) });
+        shard.write().unwrap_or_else(|e| e.into_inner()).insert(key, stored.clone());
+        stored
+    }
+
+    /// `find`'s answer for (type, name), remembered.
+    pub(crate) fn remembered_declaration(&self, ty: TypeId, name: &str, find: impl FnOnce() -> Option<consts::VarDeclaration>) -> Option<consts::VarDeclaration> {
+        let key = (ty, dm_ir::SymbolId::of(name));
+        let shard = &self.declarations[(ty.0 as usize ^ name.len()).wrapping_mul(0x9E37_79B9) >> 26 & (SITE_SHARDS - 1)];
+        if let Some(hit) = shard.read().unwrap_or_else(|e| e.into_inner()).get(&key) {
+            return hit.clone();
+        }
+        let found = find();
+        shard.write().unwrap_or_else(|e| e.into_inner()).insert(key, found.clone());
+        found
+    }
+
     /// A site's file, line and column, remembered: the walks ask about the same terms many times.
     fn located(&self, site: Site) -> Option<(Arc<str>, u32, u32)> {
+        profile::count(profile::SITE_HIT);
         let shard = &self.sites[(site.0 as usize).wrapping_mul(0x9E37_79B9) >> 26 & (SITE_SHARDS - 1)];
         if let Some(hit) = shard.read().unwrap_or_else(|e| e.into_inner()).get(&site.0) {
             return hit.clone();
         }
+        profile::count(profile::SITE_MISS);
         let found = self.rev.debug_site_column(site.0 as usize).map(|(path, line, column)| (self.rel_arc(&path), line as u32, column as u32));
         shard.write().unwrap_or_else(|e| e.into_inner()).insert(site.0, found.clone());
         found
@@ -295,6 +345,10 @@ pub struct Ty<'m> {
 }
 
 impl<'m> Ty<'m> {
+    pub(crate) fn m_ref(&self) -> &'m Model {
+        self.m
+    }
+
     pub fn path(&self) -> &'m str {
         &self.m.paths[self.id.index()]
     }
@@ -339,6 +393,15 @@ impl<'m> Ty<'m> {
     pub fn own_vars_named(&self, name: &str) -> impl Iterator<Item = Member<'m>> + 'm {
         let m = self.m;
         m.named.get(&(self.id, dm_ir::SymbolId::of(name), true)).into_iter().flatten().map(move |&id| Member { m, id })
+    }
+
+    /// The ids of this type's own definitions of the proc `name`, in override order.
+    pub(crate) fn own_proc_ids(&self, name: &str) -> &'m [MemberId] {
+        self.m.named.get(&(self.id, dm_ir::SymbolId::of(name), false)).map_or(&[], |v| &v[..])
+    }
+
+    pub(crate) fn member(&self, id: MemberId) -> Member<'m> {
+        Member { m: self.m, id }
     }
 
     /// This type's own definitions of the proc `name`, in override order.

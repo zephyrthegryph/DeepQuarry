@@ -181,6 +181,7 @@ pub fn cpu_account(tag: String, ms: u64) {
 }
 
 pub fn cpu_account_report() {
+    crate::model::profile::report();
     if !cpu_accounting() {
         return;
     }
