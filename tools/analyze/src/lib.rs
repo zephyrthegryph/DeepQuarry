@@ -31,6 +31,7 @@ pub mod lints;
 pub mod base_vars_dead;
 pub mod parity;
 pub mod pat;
+pub mod report;
 pub mod run;
 pub mod sem;
 pub mod scopes;

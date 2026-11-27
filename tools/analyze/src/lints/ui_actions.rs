@@ -539,7 +539,7 @@ struct PInfo {
 
 /// One dm file's contribution: hosts, the procs read by index, the identity hash of every proc
 /// (`names`: name hash and content hash, in file order), and the lines an `ALLOW(ui_actions)` keeps.
-#[derive(Serialize, Deserialize, Default, PartialEq)]
+#[derive(Clone, Serialize, Deserialize, Default, PartialEq)]
 struct DmFacts {
     ids: Vec<(String, String)>,
     legacy: Vec<String>,
@@ -1262,7 +1262,7 @@ impl<'a> Analysis<'a> {
     }
 }
 
-#[derive(Serialize, Deserialize, Default, PartialEq)]
+#[derive(Clone, Serialize, Deserialize, Default, PartialEq)]
 struct TsxFacts {
     calls: Vec<RawCall>,
 }

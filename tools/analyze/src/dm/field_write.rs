@@ -214,7 +214,7 @@ pub struct FwlIndex {
     pub globals: BTreeMap<String, String>,
 }
 
-#[derive(Serialize, Deserialize, Default, PartialEq)]
+#[derive(Clone, Serialize, Deserialize, Default, PartialEq)]
 struct PerFile {
     fields: Vec<(String, String)>,
     members: Vec<(String, String, String)>,

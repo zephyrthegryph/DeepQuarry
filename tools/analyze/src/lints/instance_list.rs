@@ -178,14 +178,14 @@ fn scan_decls(f: &SourceFile) -> Vec<(String, String, usize)> {
 
 /// One file's contribution: its per-instance list declarations and the `GLOBAL_DATUM_INIT` types
 /// it creates.
-#[derive(Serialize, Deserialize, Default, PartialEq)]
+#[derive(Clone, Serialize, Deserialize, Default, PartialEq)]
 struct Facts {
     decls: Vec<(String, String, u32)>,
     globals: Vec<String>,
 }
 
 /// One file's declarations that survive the singleton and ALLOW questions.
-#[derive(Serialize, Deserialize, Default, PartialEq)]
+#[derive(Clone, Serialize, Deserialize, Default, PartialEq)]
 struct Judged {
     decls: Vec<(String, String, u32)>,
     uses: Vec<AllowUse>,

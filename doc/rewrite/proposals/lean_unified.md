@@ -214,3 +214,60 @@ request. Next, in this order: keep the input (model, parsed bodies) per front en
 **For LINTS (2a):** the checker no longer needs the converted tree: the native checker reads dmbc's tree, and the default one reads dreammaker's
 parse, never `DQ_ANALYZE_PARSE=dmbc`. The native input reuses `analysis_tree::{matched, front, Front, var_header, signature_parts,
 line_end_column, source_line, locate_in, macro_warnings}`: keep them (or move them beside `dreamchecker_input.rs`) when the converter goes.
+
+## 1+3 ENGINE: analysis results as queries (2026-11-27, branch `compiler/analysis-queries`)
+
+### Increment 1: the answer is the top query; results as data
+
+- **Answers in dm-query.** The daemon keeps one `dm_query::Db` per project root (`dmbc/src/daemon/analysis_db.rs`). Its top query
+  `ANSWER(argv, cwd)` is a command's whole answer (exit code, report, stderr). It reads `TREE`, an input whose hash moves only when the
+  directory watcher (`fs_watch`, `changed_entries_since`) logged a change under the root that a command can read (everything but
+  `.dmbc`, `.git`, `data` and any `target` or `node_modules`; a lost event, another epoch or an uncovered root counts as a change), and
+  one `VAR(name)` per environment variable the run read (`dq_hostio::env_reads`; early cutoff: another shell whose other variables differ
+  stays green). A run that started a child command reads the whole environment. `dq_analyze::cli::rememberable` names what is asked
+  through it: `check` without `--changed-only`, `--timing`, `--no-cache`, `--rehash` or `DQ_ALLOW_USAGE` (an effect or an input outside
+  the root); the rest runs as before.
+- **dm-query `get_with`.** Kinds whose function each read supplies (`Db::define_local`): revalidated like any other; a dependant that
+  finds one red with no function at hand sees it missing and runs itself.
+- **Results as data.** `dq_analyze::report`: a check's stdout is `Report::render` of its report: per lint its text, its sites as
+  `Diagnostic`s (lint, rule, file, line, column (0 until lints report columns), message, severity: `Error` for a site the verdict counts,
+  `Baselined` for a legacy site its baseline admits, `Note` where the lint judges itself) and its allow uses. The daemon sends a remembered
+  answer as data (`Reply::AnalysisData`: the report and its revision) and the client renders it, the same bytes. `--json` prints the
+  report, `--file F` one file's diagnostics, `--since N` what changed since the report of revision N (the daemon keeps the last 16;
+  standalone has no history: revision 0, everything added). The view flags are not part of the answer's key.
+
+### Increment 2: incr on the query database, one persistence layer
+
+- `incr::facts/keyed/keyed_by/two_phase/cached` keep their signatures (result types gained `Clone`) and run on one `dm_query::Db` per
+  stamp, kept for the life of the process: every entry is named by what decides it (`ENTRY(store, context, content key)`,
+  `VALUE(store, key)`), computed by the caller's closure through `get_with`, and held decoded, so a hosted request reads unchanged results
+  without decoding them, and an entry is valid for every worktree the daemon serves.
+- Persistence is one layer for both paths: per-store slot files (`persist-*.bin`) with per-root leases and a byte budget
+  (`DQ_ANALYZE_STORE_BUDGET_MB`, 768): the worktree's `data/analyze-cache` standalone, `E:/dq-cache/analysis/<image>` in the daemon
+  (`[cache.analysis]`). A lint's per-file results and whole-tree memo are entries too (`lint:<name>|<version>`, `lint-tree:...`).
+- Deleted: incr's own disk stores (`incr-*.bin`, the sharded containers), `LintCache` and `lint-*.bin`, the daemon's byte store
+  (`daemon/analysis_store.rs`, its `Provider` trait).
+- Answers persist beside the slots (`answer-*.bin`) with a fingerprint of every file the watcher would report (path, size, mtime; taken
+  as the run starts) and the variables read, written only when the watcher saw no relevant change while the run went. `ANSWER`'s function
+  reads it first: a restarted daemon answers an unchanged request after one walk of the root.
+
+Not yet (what is left, in order): the context keys are still whole-index keys (a judge reruns on any fact change of its store; the
+fine-grained form needs judges to read index entries through a recording accessor, which changes lint bodies: the LINTS lane's port);
+the sem record, `value_procs`, the walks and `gen/deps` still validate per run (about 5 s of a body edit's 7 s: `gen/deps` 1.8 s,
+`value_procs` 1.7 s, the walk-cache validation, `sem/handlers` 0.8 s); the model store and walk store still decode from their own files
+after each request (prewarm).
+
+Measured (single runs; the machine was shared with three or four other lanes building, so edit timings are noisy):
+
+| What | master | this branch |
+|---|---|---|
+| nothing changed, in the daemon | 0.8-4.7 s | 46-101 ms (client process end to end 0.17-0.27 s) |
+| one-line body edit, then its revert | 6.0 / 6.6 s (82 s once, a cold model store) | 11.2 / 7.2 s with `DQ_ANALYZE_TRACE` on (13-19 s before increment 2) |
+| first request of a new daemon | 56-209 s | 112 s (loaded machine) |
+| restarted daemon, nothing changed | a full run (1.2 s with warm disk caches; minutes cold) | 0.57 s in the daemon (the answer read back after one walk of the root), 0.83 s end to end |
+
+Proof on this branch: `check --raw` and `check` byte-identical to master's standalone answer on master and on seeded trees (a one-line
+body edit, a new var, a new proc, a deleted file: daemon answers of increment 1 against master standalone, every pair identical); after
+increment 2 and the merge of master: daemon `check --raw`, standalone `check --raw` (cold and warm slots), `check` and `check --raw
+--no-cache` identical to master's; `gen` rewrites nothing; the analyze test suite (gate-test: 298 unit tests and the integration tests)
+passes; dm-query's tests (`get_with` included) and dmbc's `analysis_db` and `fs_watch` tests pass.

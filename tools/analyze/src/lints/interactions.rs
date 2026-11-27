@@ -36,7 +36,7 @@ static META: Meta = Meta {
 };
 
 /// One file's `DECLARE_INTERACTIONS` / `get_interactions()` sites: `(type path, line, allowed)`.
-#[derive(Serialize, Deserialize, Default, PartialEq)]
+#[derive(Clone, Serialize, Deserialize, Default, PartialEq)]
 struct Facts {
     decls: Vec<(String, u32, bool)>,
     uses: Vec<AllowUse>,
