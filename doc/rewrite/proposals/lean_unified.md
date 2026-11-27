@@ -329,13 +329,24 @@ swing 2x between runs; CPU time is the steadier figure):
 | cold `gen` (3 model builds), wall | 128 s, 260 s, 215 s | 302 s |
 | cold `gen`, CPU | 125 s, 129 s | 280 s |
 | model build per round, wall | 29 s / 82 s / 59 s | 67 s (two front ends) / 26 s / 25 s |
-| `check --raw --no-cache` | 149 s, 304 s | 171 s, 235 s |
+| `check --raw --no-cache` | 149 s, 304 s, 253 s | 171 s, 235 s, 349 s |
+| cold `gen`, machine at 94-100 % (p6) | 314 s, CPU 131 s | 644 s, CPU 287 s |
+| `check` warm no-op | 10.7 s | 1.9-9.1 s |
+| `check` after a one-line body edit (standalone) | 28.6 s | 67-253 s |
+| front end alone (`dreamchecker --parse-only`, its body parse included) | | wall 65 s, CPU 31.5 s |
 
 The front end is parallel where dreammaker's parse is one thread: under load a model build is faster on the branch (rounds 2 and 3
 above), and it costs about twice the CPU (about 46 s per build against 22 s, the front end's own share). The rest of the extra CPU is
 the walks (`sem/handlers` 13-17 s against 3-6 s): the view builds a chain (`model::expr::chain`, a root and a `Vec` of hops) on every
 visit where dreammaker's AST was matched in place. A cold `gen` from nothing builds the front end twice in its first round: the first
 build fails on the parent types the generated files declare (`build_bootstrapping` then declares them in the stub and builds again).
+
+On this machine, where other lanes keep every core busy, CPU is what a run costs, and the branch's model build costs about twice
+master's: the front end alone takes about 20 CPU-s (dreammaker's whole parse took 20-22, on one thread), the typed bodies another 10,
+then initializers, folding and the index. A cold `gen` builds the model three times. Standalone, a one-line edit pays a whole front
+end and model (master kept its dreammaker model on disk, `sem/model_store.rs`, deleted here, and re-parsed one file); the daemon's
+retained front end is the replacement for that, and standalone runs do not use it. Proof p6 (after every change above, master at
+c2e3abdc08's merge base): cold `gen` identical (410 files), `check --raw --no-cache` identical (1605 lines).
 
 Tried and dropped: keeping a retained front end session in the analysis process (the daemon's `hosted_frontend` path on a
 process-local `BuildHost`), so a `gen`'s second and third model builds would be incremental. The retained cold build took 206 s (the
