@@ -1,7 +1,7 @@
 use serde::{Deserialize, Serialize};
 use std::io::{self, Read, Write};
 const MAX_FRAME: usize = 4 * 1024 * 1024;
-pub(super) const VERSION: u32 = 6;
+pub(super) const VERSION: u32 = 7;
 #[derive(Serialize, Deserialize)]
 pub(super) enum Request {
     Hello { version: u32, compiler: u128 },
@@ -29,6 +29,8 @@ pub(super) enum Reply {
     Query(super::query::QueryReply),
     /// An analysis request finished with this exit code (its output came before, as `Diagnostic` frames).
     Analyzed(u8),
+    /// Part of a remembered analysis answer as data (`analysis::Answered` in JSON, split over frames; before `Analyzed`).
+    AnalysisData(String),
 }
 pub(super) fn send(stream: &mut impl Write, value: &impl Serialize) -> io::Result<()> {
     let bytes = serde_json::to_vec(value)?;

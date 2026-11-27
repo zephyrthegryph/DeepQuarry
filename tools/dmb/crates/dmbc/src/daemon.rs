@@ -5,6 +5,7 @@ use std::{
     time::Duration,
 };
 mod analysis;
+mod analysis_db;
 mod analysis_store;
 mod analysis_model;
 /// dq-analyze's parse provider (`DQ_ANALYZE_PARSE=dmbc`): in the daemon, the remembered model when its inputs are unchanged
