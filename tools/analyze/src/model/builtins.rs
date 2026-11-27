@@ -11,7 +11,7 @@
 
 
 
-use std::collections::HashMap;
+type HashMap<K, V> = std::collections::HashMap<K, V, foldhash::fast::FixedState>;
 use std::sync::OnceLock;
 
 /// A var's constant value, as far as the lints read one.

@@ -158,37 +158,39 @@ impl Lint for ImageDirAfterBuild {
         let root = &cx.tree.root;
         let exempt = cx.list("exempt_files");
         let mut rows: Vec<(String, u32)> = Vec::new();
-        for ty in sem.m().types() {
-            let owner = ty.path().to_string();
-            for pname in ty.proc_names() {
-                for v in ty.proc_definitions(pname) {
-                    let Some(code) = v.body() else { continue };
-                    let Some(rel) = sem.file_of(v.site()) else { continue };
-                    if !rel.starts_with("code/") || cx.exempt(&rel) || exempt.iter().any(|p| rel == p.as_str()) {
-                        continue;
-                    }
-                    let mut locals: HashMap<String, (String, Option<Place>)> = HashMap::new();
-                    for p in v.parameters().iter() {
-                        locals.insert(p.name.to_string(), (path_of(&p.type_path), None));
-                    }
-                    collect_locals(code, &rel, &mut locals);
-                    let mut typer = Typer { sem, sc: ProcScope { owner: &owner, locals } };
-                    typer.infer(code);
-                    walk_block(code, &mut |vis, site| {
-                        let Form::Assign { lhs, .. } = &vis.form else { return };
-                        let Some(c) = chain(strip_groups(lhs)) else { return };
-                        let Some((last, _)) = c.hops.split_last() else { return };
-                        let Hop::Field { name: f, .. } = last else { return };
-                        if *f != "dir" {
-                            return;
-                        }
-                        if typer.chain(&c, c.hops.len() - 1).is_some_and(|t| is_image(sem, &t)) {
-                            rows.push((rel.to_string(), sem.line(Some(site))));
-                        }
-                    });
-                }
+        // Kept per file (`procs::per_file_in`): a file's rows read its own bodies, the model's structure (declared types) and the
+        // return types bodies declare (`return_type`), which the context names.
+        let ctx = crate::incr::mix(&[sem.structure_digest(), crate::sem::procs::return_settings_digest(sem)]);
+        let per_file: Vec<Vec<(String, u32)>> = crate::sem::procs::per_file_in(sem, "image_dir_after_build-rows", ctx, |rel, defs| {
+            let mut rows: Vec<(String, u32)> = Vec::new();
+            if !rel.starts_with("code/") || cx.exempt(rel) || exempt.iter().any(|p| rel == p.as_str()) {
+                return rows;
             }
-        }
+            for (owner, v) in defs {
+                let Some(code) = v.body() else { continue };
+                let mut locals: HashMap<String, (String, Option<Place>)> = HashMap::new();
+                for p in v.parameters().iter() {
+                    locals.insert(p.name.to_string(), (path_of(&p.type_path), None));
+                }
+                collect_locals(code, rel, &mut locals);
+                let mut typer = Typer { sem, sc: ProcScope { owner, locals } };
+                typer.infer(code);
+                walk_block(code, &mut |vis, site| {
+                    let Form::Assign { lhs, .. } = &vis.form else { return };
+                    let Some(c) = chain(strip_groups(lhs)) else { return };
+                    let Some((last, _)) = c.hops.split_last() else { return };
+                    let Hop::Field { name: f, .. } = last else { return };
+                    if *f != "dir" {
+                        return;
+                    }
+                    if typer.chain(&c, c.hops.len() - 1).is_some_and(|t| is_image(sem, &t)) {
+                        rows.push((rel.to_string(), sem.line(Some(site))));
+                    }
+                });
+            }
+            rows
+        });
+        rows.extend(per_file.into_iter().flatten());
         rows.sort();
         rows.dedup();
         for (rel, line) in rows {

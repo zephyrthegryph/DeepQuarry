@@ -26,7 +26,7 @@ use dm_syntax::{Expr, Statement};
 use super::Sem;
 use crate::model::expr::{chain, literal, Args, Chain, Form, Hop, Lit, Root};
 use crate::model::procs::Proc;
-use crate::model::walk::{stmt_blocks, stmts, walk_block, Stmt};
+use crate::model::walk::{stmt_blocks, stmts, Stmt};
 
 /// The lifecycle procs of a system and a controller: the kernel calls them once, while the world boots.
 const BOOT_PROCS: &[&str] = &["New", "preinit", "initialize", "Initialize", "on_members_ready", "kernel_members_ready", "OnConfigLoad"];
@@ -197,7 +197,7 @@ impl GlobalIndex {
             let mut facts = Facts::default();
             let locals: HashSet<String> = p.parameters().iter().map(|x| x.name.clone()).collect();
             if let Some(code) = p.body() {
-                scan(code, &locals, &global_vars, &glob_fields, &mut facts);
+                scan(sem.m(), code, &locals, &global_vars, &glob_fields, &mut facts);
             }
             facts
         }, |scanned: Vec<Facts>| {
@@ -340,10 +340,10 @@ fn is_incr(op: &str) -> bool {
     matches!(op, "pre++" | "post++" | "pre--" | "post--")
 }
 
-fn scan(code: &[Statement], params: &HashSet<String>, globals: &HashSet<String>, glob_fields: &HashSet<String>, f: &mut Facts) {
+fn scan<'m>(m: &'m crate::model::Model, code: &'m [Statement], params: &HashSet<String>, globals: &HashSet<String>, glob_fields: &HashSet<String>, f: &mut Facts) {
     let mut locals = params.clone();
     collect_locals(code, &mut locals);
-    walk_block(code, &mut |v, _| {
+    crate::model::walk::walk_block_in(m, code, &mut |v, _| {
         match &v.form {
             Form::Assign { lhs, .. } => {
                 if let Some(c) = chain(lhs) {

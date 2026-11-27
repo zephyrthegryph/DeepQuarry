@@ -1081,7 +1081,7 @@ pub fn typed_writes(sem: &Sem, p: Proc<'_>) -> Vec<(String, String)> {
             Receiver::Unknown => (UNTYPED_WRITE.to_string(), var),
         });
     };
-    walk_block(code, &mut |vis, _| {
+    crate::model::walk::walk_block_in(sem.m(), code, &mut |vis, _| {
         if let Form::Assign { lhs, .. } = &vis.form {
             if let Some(c) = chain(lhs) {
                 record(&c, c.hops.len());
@@ -1097,7 +1097,7 @@ pub fn typed_writes(sem: &Sem, p: Proc<'_>) -> Vec<(String, String)> {
     });
     // Writes that are calls: a tracked setter (`x.set_v(..)`, `set_v(..)`) and a relation mutator (`rel_add(E, nameof(E.v), ..)`) write `v` as an
     // assignment does. Without them a var whose every write went through its setter or the relation layer reads as never written (constant).
-    walk_block(code, &mut |vis, _| {
+    crate::model::walk::walk_block_in(sem.m(), code, &mut |vis, _| {
         let Form::Chain(c) = &vis.form else { return };
         if let mx::Root::Call { name: n, args } = &c.root {
             if let Some(v) = n.strip_prefix("set_") {
@@ -1546,7 +1546,7 @@ impl<'a, 'e> Walk<'a, 'e> {
             }
             fr.locals.insert(prm.name.clone(), v);
         }
-        collect_narrowing(code, &mut fr.narrow);
+        collect_narrowing(self.eng.sem.m(), code, &mut fr.narrow);
         let outer_rel = std::mem::replace(&mut self.rel, fr.rel.clone());
         let in_engine = self.eng.virtual_dispatch && ENGINE_DIRS.iter().any(|d| fr.rel.starts_with(d));
         self.engine_depth += in_engine as u32;
@@ -2286,7 +2286,7 @@ impl<'a, 'e> Walk<'a, 'e> {
                 let mut w: Vec<String> = Vec::new();
                 if let Some(code) = p.body() {
                     // A var of the receiver the body names (`return wanted_issue_owned`, `src.x`).
-                    walk_block(code, &mut |vis, _| {
+                    crate::model::walk::walk_block_in(self.eng.sem.m(), code, &mut |vis, _| {
                         if let Form::Chain(c) = &vis.form {
                             let n = match (&c.root, c.hops.first()) {
                                 (mx::Root::Ident(n), _) if *n != "src" => Some(*n),
@@ -2575,8 +2575,8 @@ impl<'a> Frame<'a> {
     }
 }
 
-fn collect_narrowing(code: &[Statement], out: &mut HashMap<String, Vec<String>>) {
-    walk_block(code, &mut |vis, _| {
+fn collect_narrowing<'m>(m: &'m crate::model::Model, code: &'m [Statement], out: &mut HashMap<String, Vec<String>>) {
+    crate::model::walk::walk_block_in(m, code, &mut |vis, _| {
         if let Form::Chain(c) = &vis.form {
             if let mx::Root::Call { name: "istype", args } = &c.root {
                 if args.len() == 2 {

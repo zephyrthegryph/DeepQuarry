@@ -486,7 +486,33 @@ pub fn stmt_blocks<'a>(s: &Stmt<'a>) -> Vec<&'a [Statement]> {
 
 /// Every expression of a body with the site of the statement it is in (what `sem::ast::walk_block` gave with the statement's line).
 pub fn walk_block(block: &[Statement], f: &mut dyn FnMut(&Visit<'_>, Site)) {
-    for st in stmts(block) {
+    walk_block_with(block, &|b| Stmts::Owned(stmts(b)), f)
+}
+
+/// [`walk_block`] over a body of `m`, reading each block's statements once per model ([`super::Model::stmts`]): for a scan that runs
+/// over the same bodies again and again (the walks' per-proc facts).
+pub fn walk_block_in<'m>(m: &'m super::Model, block: &'m [Statement], f: &mut dyn FnMut(&Visit<'_>, Site)) {
+    walk_block_with(block, &|b| Stmts::Shared(m.stmts(b)), f)
+}
+
+/// A block's statements, read now or remembered by the model.
+pub enum Stmts<'a> {
+    Owned(Vec<StmtAt<'a>>),
+    Shared(std::sync::Arc<super::Block<'a>>),
+}
+
+impl<'a> std::ops::Deref for Stmts<'a> {
+    type Target = [StmtAt<'a>];
+    fn deref(&self) -> &[StmtAt<'a>] {
+        match self {
+            Stmts::Owned(v) => v,
+            Stmts::Shared(b) => &b.stmts,
+        }
+    }
+}
+
+fn walk_block_with<'a>(block: &'a [Statement], get: &dyn Fn(&'a [Statement]) -> Stmts<'a>, f: &mut dyn FnMut(&Visit<'_>, Site)) {
+    for st in get(block).iter() {
         let at = st.site;
         match &st.stmt {
             Stmt::Expr(Form::Assign { op, lhs, rhs }, None) => walk_form(Form::Assign { op, lhs, rhs }, None, at, 0, &mut |v| f(v, at)),
@@ -530,7 +556,7 @@ pub fn walk_block(block: &[Statement], f: &mut dyn FnMut(&Visit<'_>, Site)) {
             }
         }
         for b in stmt_blocks(&st.stmt) {
-            walk_block(b, f);
+            walk_block_with(b, get, f);
         }
     }
 }

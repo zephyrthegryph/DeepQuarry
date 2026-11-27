@@ -120,40 +120,41 @@ impl Lint for UntypedMember {
         let statics = static_names(sem);
         let root = &cx.tree.root;
         let mut rows: Vec<(String, u32, String)> = Vec::new();
-        for ty in sem.m().types() {
-            let owner = ty.path().to_string();
-            for pname in ty.proc_names() {
-                for v in ty.proc_definitions(pname) {
-                    let Some(code) = v.body() else { continue };
-                    let Some(rel) = sem.file_of(v.site()) else { continue };
-                    if !rel.starts_with("code/") || cx.exempt(&rel) {
-                        continue;
-                    }
-                    let mut locals: HashMap<String, (String, Option<Place>)> = HashMap::new();
-                    for p in v.parameters().iter() {
-                        locals.insert(p.name.to_string(), (path_of(&p.type_path), None));
-                    }
-                    collect_locals(code, &rel, &mut locals);
-                    let sc = ProcScope { owner: &owner, locals };
-                    walk_block(code, &mut |vis, site| {
-                        let Form::Chain(c) = &vis.form else { return };
-                        let line = sem.line(Some(site));
-                        let mut cur = head_type(sem, &sc, &c.root);
-                        for fo in c.hops.iter() {
-                            match fo {
-                                Hop::Field { name: f, .. } => {
-                                    if cur.is_none() && statics.contains(*f) {
-                                        rows.push((rel.to_string(), line, f.to_string()));
-                                    }
-                                    cur = cur.and_then(|c| declared(sem, &c, f));
-                                }
-                                _ => cur = None,
-                            }
-                        }
-                    });
-                }
+        // Kept per file (`procs::per_file_in`): a file's rows read its own bodies and the model's structure (declarations, which vars
+        // are static), which the context names.
+        let per_file: Vec<Vec<(String, u32, String)>> = crate::sem::procs::per_file_in(sem, "untyped_member-rows", sem.structure_digest(), |rel, defs| {
+            let mut rows: Vec<(String, u32, String)> = Vec::new();
+            if !rel.starts_with("code/") || cx.exempt(rel) {
+                return rows;
             }
-        }
+            for (owner, v) in defs {
+                let Some(code) = v.body() else { continue };
+                let mut locals: HashMap<String, (String, Option<Place>)> = HashMap::new();
+                for p in v.parameters().iter() {
+                    locals.insert(p.name.to_string(), (path_of(&p.type_path), None));
+                }
+                collect_locals(code, rel, &mut locals);
+                let sc = ProcScope { owner, locals };
+                walk_block(code, &mut |vis, site| {
+                    let Form::Chain(c) = &vis.form else { return };
+                    let line = sem.line(Some(site));
+                    let mut cur = head_type(sem, &sc, &c.root);
+                    for fo in c.hops.iter() {
+                        match fo {
+                            Hop::Field { name: f, .. } => {
+                                if cur.is_none() && statics.contains(*f) {
+                                    rows.push((rel.to_string(), line, f.to_string()));
+                                }
+                                cur = cur.and_then(|c| declared(sem, &c, f));
+                            }
+                            _ => cur = None,
+                        }
+                    }
+                });
+            }
+            rows
+        });
+        rows.extend(per_file.into_iter().flatten());
         rows.sort();
         rows.dedup();
         for (rel, line, name) in rows {

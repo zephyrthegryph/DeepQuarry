@@ -20,7 +20,7 @@ use crate::model::walk::{stmt_blocks, stmt_exprs, stmts, walk_block, ForInit, St
 use crate::model::Site;
 use crate::sem::procs::engine_line;
 use crate::sem::Sem;
-use crate::tree::CODE_DM;
+use crate::tree::{SourceFile, CODE_DM};
 
 const HINT: &str = "declare the var in the holder type's CAPABILITIES block: ref_one(nameof(v)) (a reference), owns_one/owns_many (an owned value), links(A::a, B::b) \
 (a pair); a write to an undeclared var is a test failure. doc/rewrite/proposals/relations.md D1";
@@ -82,72 +82,85 @@ impl Lint for RelWriteUndeclared {
         };
         let sem: &Sem = &sem;
         let rels = relation_index(cx);
-        let kinds = Kinds { sem, exempt_types: Vec::new(), registry: Vec::new(), cache: Default::default() };
-        let w = Walker { sem, kinds: &kinds };
         let root = &cx.tree.root;
         let mut seen: HashSet<(String, u32, String)> = HashSet::new();
         let mut found: Vec<(String, u32, String)> = Vec::new();
-        for ty in sem.m().types() {
-            let owner = ty.path().to_string();
-            for pname in ty.proc_names() {
-                for v in ty.proc_definitions(pname) {
-                    let Some(code) = v.body() else { continue };
-                    let Some(rel) = sem.file_of(v.site()) else { continue };
-                    if cx.exempt(&rel) {
-                        continue;
-                    }
-                    let mut locals = std::collections::HashMap::new();
-                    for p in v.parameters().iter() {
-                        locals.insert(p.name.to_string(), (path_of(&p.type_path), None));
-                    }
-                    collect_locals(code, &rel, &mut locals);
-                    let sc = ProcScope { owner: &owner, locals };
-                    walk_block(code, &mut |vis, site| {
-                        let line = sem.line(Some(site));
-                        let Form::Chain(c) = &vis.form else { return };
-                        if !c.hops.is_empty() {
-                            return;
-                        }
-                        let Root::Call { name, args } = &c.root else { return };
-                        for (hi, vi) in verb_pairs(name) {
-                            let (Some(h), Some(vn)) = (args.get(*hi), args.get(*vi)) else { continue };
-                            let Some((recv, var)) = nameof_arg(vn) else { continue };
-                            let holder_ty = recv.and_then(|r| w.type_of(&sc, r)).or_else(|| w.type_of(&sc, h)).filter(|t| !t.is_empty() && t != "/");
-                            if is_declared(sem, &rels, holder_ty.as_deref(), &var) {
-                                continue;
-                            }
-                            let at = engine_line(root, &rel, line) as u32;
-                            if seen.insert((rel.to_string(), at, var.clone())) {
-                                let who = holder_ty.clone().unwrap_or_else(|| "an untyped holder".to_string());
-                                let decl = holder_ty.as_deref().and_then(|t| sem.var_owner(t, &var)).unwrap_or_default();
-                                let listy = holder_ty.as_deref().and_then(|t| sem.var_decl(t, &var)).map(|d| d.is_list()).unwrap_or(false) || matches!(*name, "rel_add" | "rel_remove" | "rel_take_all");
-                                let keyed = *name == "rel_add" && args.len() > 3;
-                                found.push((rel.to_string(), at, format!("{} writes `{}` of {}, which no relation declares [decl {}::{} many={} keyed={} at={}]", name, var, who, decl, var, listy as u8, keyed as u8, holder_ty.as_deref().and_then(|t| sem.var_decl(t, &var)).map(|d| d.file).unwrap_or_default())));
-                            }
-                        }
-                    });
+        // Kept per file (`procs::per_file_in`): a file's writes read its own bodies, the model's structure and where it sits (the message
+        // names the declaring file) and the relation index, which the context names.
+        let mut rel_rows: Vec<(&String, &Vec<String>)> = rels.iter().collect();
+        rel_rows.sort();
+        let ctx = crate::incr::mix(&[sem.structure_digest(), sem.placement_digest(), crate::incr::ctx_key(&rel_rows)]);
+        let per_file: Vec<Vec<(String, u32, String, String)>> = crate::sem::procs::per_file_in(sem, "rel_write_undeclared-writes", ctx, |rel, defs| {
+            let mut writes: Vec<(String, u32, String, String)> = Vec::new();
+            if cx.exempt(rel) {
+                return writes;
+            }
+            // The type cache is per file (a judgement runs on many threads).
+            let kinds = Kinds { sem, exempt_types: Vec::new(), registry: Vec::new(), cache: Default::default() };
+            let w = Walker { sem, kinds: &kinds };
+            for (owner, v) in defs {
+                let Some(code) = v.body() else { continue };
+                let mut locals = std::collections::HashMap::new();
+                for p in v.parameters().iter() {
+                    locals.insert(p.name.to_string(), (path_of(&p.type_path), None));
                 }
+                collect_locals(code, rel, &mut locals);
+                let sc = ProcScope { owner, locals };
+                walk_block(code, &mut |vis, site| {
+                    let line = sem.line(Some(site));
+                    let Form::Chain(c) = &vis.form else { return };
+                    if !c.hops.is_empty() {
+                        return;
+                    }
+                    let Root::Call { name, args } = &c.root else { return };
+                    for (hi, vi) in verb_pairs(name) {
+                        let (Some(h), Some(vn)) = (args.get(*hi), args.get(*vi)) else { continue };
+                        let Some((recv, var)) = nameof_arg(vn) else { continue };
+                        let holder_ty = recv.and_then(|r| w.type_of(&sc, r)).or_else(|| w.type_of(&sc, h)).filter(|t| !t.is_empty() && t != "/");
+                        if is_declared(sem, &rels, holder_ty.as_deref(), &var) {
+                            continue;
+                        }
+                        let at = engine_line(root, rel, line) as u32;
+                        let who = holder_ty.clone().unwrap_or_else(|| "an untyped holder".to_string());
+                        let decl = holder_ty.as_deref().and_then(|t| sem.var_owner(t, &var)).unwrap_or_default();
+                        let listy = holder_ty.as_deref().and_then(|t| sem.var_decl(t, &var)).map(|d| d.is_list()).unwrap_or(false) || matches!(*name, "rel_add" | "rel_remove" | "rel_take_all");
+                        let keyed = *name == "rel_add" && args.len() > 3;
+                        writes.push((rel.to_string(), at, var.clone(), format!("{} writes `{}` of {}, which no relation declares [decl {}::{} many={} keyed={} at={}]", name, var, who, decl, var, listy as u8, keyed as u8, holder_ty.as_deref().and_then(|t| sem.var_decl(t, &var)).map(|d| d.file).unwrap_or_default())));
+                    }
+                });
+            }
+            writes
+        });
+        for (rel, at, var, msg) in per_file.into_iter().flatten() {
+            if seen.insert((rel.clone(), at, var)) {
+                found.push((rel, at, msg));
             }
         }
         // The path form `nameof(/type::var)`: the holder type is named in the argument, so a text scan finds it.
         let path_form = crate::pat!(r"\b(rel_(?:set|add|remove|clear|take|take_all|move))\(\s*[^,]+,\s*nameof\(\s*(/[\w/]+?)/?::(\w+)\s*\)");
-        for f in cx.files() {
-            if !f.rel.ends_with(".dm") {
-                continue;
-            }
+        let dm_files: Vec<&SourceFile> = cx.files().into_iter().filter(|f| f.rel.ends_with(".dm")).collect();
+        // Each file's path-form writes (verb, type, var, line), kept per file (`crate::incr`).
+        let path_writes: Vec<Vec<(String, String, String, u32)>> = crate::incr::facts("rel_write_undeclared-path-form", &dm_files, |f| {
+            let mut out = Vec::new();
             for (i, line) in f.code().lines().enumerate() {
                 for c in path_form.captures_iter(line).iter() {
-                    let (verb, ty, var) = (c.s(1), c.s(2), c.s(3));
-                    if is_declared(sem, &rels, Some(ty), var) {
-                        continue;
-                    }
-                    let at = (i + 1) as u32;
-                    if seen.insert((f.rel.to_string(), at, var.to_string())) {
-                        let decl = sem.var_owner(ty, var).unwrap_or_default();
-                        let listy = sem.var_decl(ty, var).map(|d| d.is_list()).unwrap_or(false) || matches!(verb, "rel_add" | "rel_remove" | "rel_take_all");
-                        let file = sem.var_decl(ty, var).map(|d| d.file).unwrap_or_default();
-                        found.push((f.rel.to_string(), at, format!("{} writes `{}` of {}, which no relation declares [decl {}::{} many={} keyed=0 at={}]", verb, var, ty, decl, var, listy as u8, file)));
-                    }
+                    out.push((c.s(1).to_string(), c.s(2).to_string(), c.s(3).to_string(), (i + 1) as u32));
+                }
+            }
+            out
+        });
+        for (f, writes) in dm_files.iter().zip(path_writes) {
+            for (verb, ty, var, at) in &writes {
+                let (verb, ty, var) = (verb.as_str(), ty.as_str(), var.as_str());
+                if is_declared(sem, &rels, Some(ty), var) {
+                    continue;
+                }
+                let at = *at;
+                if seen.insert((f.rel.to_string(), at, var.to_string())) {
+                    let decl = sem.var_owner(ty, var).unwrap_or_default();
+                    let listy = sem.var_decl(ty, var).map(|d| d.is_list()).unwrap_or(false) || matches!(verb, "rel_add" | "rel_remove" | "rel_take_all");
+                    let file = sem.var_decl(ty, var).map(|d| d.file).unwrap_or_default();
+                    found.push((f.rel.to_string(), at, format!("{} writes `{}` of {}, which no relation declares [decl {}::{} many={} keyed=0 at={}]", verb, var, ty, decl, var, listy as u8, file)));
                 }
             }
         }

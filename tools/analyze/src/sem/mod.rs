@@ -101,7 +101,7 @@ fn provided_frontend(dme: &Path) -> Result<dm_tree::frontend::FrontendRevision, 
     let started = std::time::Instant::now();
     let rev = provider(dme);
     if dq_hostio::var("DQ_ANALYZE_TRACE").is_ok() || dq_hostio::var("DQ_ANALYZE_PARSE_TRACE").is_ok() {
-        eprintln!("analyze: front end for the model in {:.1?}", started.elapsed());
+        eprintln!("analyze: front end for the model in {:.1?} (process cpu {} ms)", started.elapsed(), crate::util::cpu_ms());
     }
     rev
 }
@@ -119,7 +119,8 @@ pub struct Sem {
     pub(crate) layering_owner_defs: HashMap<String, Vec<String>>,
     /// Files whose definitions (locations, bodies) the analysis consulted: the footprint a cached result depends on (see
     /// `sem::incremental`). Every file-attributed answer goes through [`Sem::rel`] or the def index, which record here.
-    touched_rel: std::sync::RwLock<std::collections::HashSet<Arc<str>>>,
+    /// Every file the analysis consulted, sharded by name (the walks' threads note one on every `rel`).
+    touched_rel: Vec<std::sync::RwLock<std::collections::HashSet<Arc<str>>>>,
     /// Built from the real `.dme` (not a partial or fixture model): its walks may be kept between runs (`walk_cache`).
     full: bool,
     /// The front end's inputs (every file's path and bytes, in include order) and each file's content key: a proc body digests as its
@@ -127,6 +128,7 @@ pub struct Sem {
     env_key: u128,
     file_keys: HashMap<String, u128>,
     structure: std::sync::OnceLock<u128>,
+    placement: std::sync::OnceLock<u128>,
     globals: std::sync::OnceLock<globals::GlobalIndex>,
     writes: std::sync::OnceLock<reads::WriteIndex>,
 }
@@ -269,7 +271,7 @@ impl Sem {
             }
         }
         if dq_hostio::var("DQ_ANALYZE_TRACE").is_ok() {
-            eprintln!("analyze: sem build: front end {:.1?}, index {:.1?}, layering {:.1?}", t_parsed, t_indexed - t_parsed, t_build.elapsed() - t_indexed);
+            eprintln!("analyze: sem build: front end {:.1?}, index {:.1?}, layering {:.1?} (process cpu {} ms)", t_parsed, t_indexed - t_parsed, t_build.elapsed() - t_indexed, crate::util::cpu_ms());
         }
         let errors = Vec::new();
         Ok(Sem {
@@ -280,11 +282,12 @@ impl Sem {
             type_loc,
             layering_type_defs,
             layering_owner_defs,
-            touched_rel: Default::default(),
+            touched_rel: (0..64).map(|_| Default::default()).collect(),
             full: real,
             env_key,
             file_keys,
             structure: Default::default(),
+            placement: Default::default(),
             globals: Default::default(),
             writes: Default::default(),
         })
@@ -312,22 +315,30 @@ impl Sem {
     }
 
     fn touch_arc(&self, file: &Arc<str>) {
-        if self.touched_rel.read().unwrap_or_else(|e| e.into_inner()).contains(file) {
+        let shard = self.touched_shard(file);
+        if shard.read().unwrap_or_else(|e| e.into_inner()).contains(file) {
             return;
         }
-        self.touched_rel.write().unwrap_or_else(|e| e.into_inner()).insert(file.clone());
+        shard.write().unwrap_or_else(|e| e.into_inner()).insert(file.clone());
+    }
+
+    fn touched_shard(&self, file: &str) -> &std::sync::RwLock<std::collections::HashSet<Arc<str>>> {
+        let h = file.bytes().fold(0usize, |h, b| h.wrapping_mul(31).wrapping_add(b as usize));
+        &self.touched_rel[h & 63]
     }
 
     fn touch_rel(&self, file: &str) {
-        if self.touched_rel.read().unwrap_or_else(|e| e.into_inner()).contains(file) {
+        let shard = self.touched_shard(file);
+        if shard.read().unwrap_or_else(|e| e.into_inner()).contains(file) {
             return;
         }
-        self.touched_rel.write().unwrap_or_else(|e| e.into_inner()).insert(Arc::from(file));
+        shard.write().unwrap_or_else(|e| e.into_inner()).insert(Arc::from(file));
     }
 
     /// Every file the analysis consulted so far (repo-relative, sorted).
     pub fn footprint(&self) -> Vec<String> {
-        let out: std::collections::BTreeSet<String> = self.touched_rel.read().unwrap_or_else(|e| e.into_inner()).iter().map(|f| f.to_string()).collect();
+        let out: std::collections::BTreeSet<String> =
+            self.touched_rel.iter().flat_map(|s| s.read().unwrap_or_else(|e| e.into_inner()).iter().map(|f| f.to_string()).collect::<Vec<_>>()).collect();
         out.into_iter().collect()
     }
 
@@ -420,6 +431,43 @@ impl Sem {
                         if p.declares() {
                             h.update(format!("d{:?}{:?}", p.declared_verb(), p.member().and_then(|m| m.return_type_path())).as_bytes());
                         }
+                    }
+                }
+                h.update(b"\n");
+            }
+            u128::from_le_bytes(h.finalize().as_bytes()[..16].try_into().unwrap())
+        })
+    }
+
+    /// A digest of where the structure sits: the file of every type, var value and declaration and proc definition (no lines). With
+    /// [`structure_digest`](Self::structure_digest) it names what a judgement may read about the rest of the model besides declarations
+    /// (`VarSig::file`, `Sem::rel` of another definition), so a judgement kept per file under both is current while neither moves.
+    /// Computed once per model.
+    pub fn placement_digest(&self) -> u128 {
+        *self.placement.get_or_init(|| {
+            let mut h = blake3::Hasher::new();
+            let file = |site: Option<Site>| self.file_of(site).unwrap_or_default();
+            for ty in self.model.types() {
+                h.update(ty.path().as_bytes());
+                h.update(b"@");
+                h.update(file(ty.site()).as_bytes());
+                for name in ty.var_names() {
+                    h.update(b"|v");
+                    h.update(name.as_bytes());
+                    let members: Vec<_> = ty.own_vars_named(&name).collect();
+                    h.update(b"@");
+                    h.update(members.last().map(|m| file(m.site())).unwrap_or_default().as_bytes());
+                    if let Some(d) = members.iter().find(|m| m.declares()) {
+                        h.update(b"@d");
+                        h.update(file(d.site()).as_bytes());
+                    }
+                }
+                for name in ty.proc_names() {
+                    h.update(b"|p");
+                    h.update(name.as_bytes());
+                    for p in ty.proc_definitions(name) {
+                        h.update(b"@");
+                        h.update(file(p.site()).as_bytes());
                     }
                 }
                 h.update(b"\n");

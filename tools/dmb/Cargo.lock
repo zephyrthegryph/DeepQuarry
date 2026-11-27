@@ -539,6 +539,7 @@ dependencies = [
  "dreamchecker",
  "dreammaker",
  "fancy-regex",
+ "foldhash",
  "md-5",
  "mimalloc",
  "rayon",

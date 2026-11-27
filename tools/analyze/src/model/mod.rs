@@ -13,11 +13,13 @@ pub mod builtins;
 pub mod consts;
 pub mod procs;
 pub mod reads;
+mod reuse;
 pub mod profile;
 pub mod expr;
 pub mod walk;
 
-use std::collections::HashMap;
+/// The view's maps hash with foldhash: their keys are ids, offsets and type paths the model owns, never untrusted input.
+type HashMap<K, V> = std::collections::HashMap<K, V, foldhash::fast::FixedState>;
 use std::path::{Path, PathBuf};
 use std::sync::Arc;
 
@@ -41,11 +43,11 @@ pub struct Model {
     /// Each declaration occurrence's stable identity (`dm_tree::frontend::declaration_keys`), built when a recording first asks.
     keys: std::sync::OnceLock<Vec<Option<dm_tree::frontend::DeclarationKey>>>,
     /// Each var's initializer, parsed from its declaration item, with the expanded offset its spans are relative to.
-    initializers: std::sync::OnceLock<HashMap<MemberId, (dm_syntax::Expr, usize)>>,
+    initializers: std::sync::OnceLock<HashMap<MemberId, (Arc<dm_syntax::Expr>, usize)>>,
     /// Each var's folded constant (`consts::fold_all`), built when first asked.
     folded: std::sync::OnceLock<consts::Folded>,
     /// Each proc's typed body (the compiler's own parse, once per revision), by member.
-    bodies: std::sync::OnceLock<HashMap<MemberId, Arc<dm_tree::frontend::StatementBody>>>,
+    bodies: std::sync::OnceLock<HashMap<MemberId, reuse::Body>>,
     root: PathBuf,
     /// Type path text by `TypeId` (`/` for the root).
     paths: Vec<Arc<str>>,
@@ -65,7 +67,12 @@ pub struct Model {
     /// Each proc's site (its parameter list), found once.
     proc_sites: Vec<std::sync::RwLock<HashMap<MemberId, Option<Site>>>>,
     /// Every site asked about so far: its file, line and column.
-    sites: Vec<std::sync::RwLock<HashMap<u32, Option<(Arc<str>, u32, u32)>>>>,
+    sites: Vec<std::sync::RwLock<HashMap<u32, Option<Loc>>>>,
+    /// The files sites are in, interned: a [`Loc`] names one by index, so a lookup copies three numbers and shares no reference count
+    /// between the walks' threads.
+    loc_files: std::sync::RwLock<(Vec<Arc<str>>, HashMap<Arc<str>, u32>)>,
+    /// This model's identity among the models of the process (never 0), for the per-thread site cache.
+    id: u64,
     /// Each proc's parameters, parsed from its header when first asked.
     params: Vec<std::sync::RwLock<HashMap<MemberId, Arc<Vec<Param>>>>>,
     /// The repo-relative spelling of each path the site map names: every included file's resolved when the model is made (the site
@@ -89,7 +96,7 @@ impl Model {
             .collect();
         let by_path: HashMap<Arc<str>, TypeId> = paths.iter().enumerate().map(|(i, p)| (p.clone(), TypeId(i as u32))).collect();
         let mut own: Vec<Vec<MemberId>> = vec![Vec::new(); paths.len()];
-        let mut occurrence = HashMap::new();
+        let mut occurrence = HashMap::default();
         for (ordinal, target) in tree.declarations().iter().enumerate() {
             let at = OccurrenceId(ordinal as u32);
             match *target {
@@ -110,24 +117,62 @@ impl Model {
         let declares = |id: &MemberId| tree.member(*id).is_some_and(|m| m.kind != MemberKind::Var && m.definition == DefinitionMode::Declare);
         for list in own.iter_mut() {
             list.sort_by_key(|id| start(id));
-            // Stable: move each proc's declaration before the definitions of the same name that precede it.
-            let mut placed: Vec<MemberId> = Vec::with_capacity(list.len());
-            for &id in list.iter() {
-                if declares(&id) {
+            // Stable: move each proc's declaration before the definitions of the same name that precede it (before the first one placed
+            // so far). A linked list with each name's first node, so a type with thousands of members places them in linear time.
+            if list.iter().any(|id| declares(id)) {
+                let n = list.len();
+                let mut next: Vec<usize> = vec![usize::MAX; n];
+                let mut prev: Vec<usize> = vec![usize::MAX; n];
+                let (mut head, mut tail) = (usize::MAX, usize::MAX);
+                let mut first_of: HashMap<(dm_ir::SymbolId, MemberKind), usize> = HashMap::default();
+                for (i, &id) in list.iter().enumerate() {
                     let name = tree.member(id).map(|m| (m.name, m.kind));
-                    let first = placed.iter().position(|p| tree.member(*p).map(|m| (m.name, m.kind)) == name);
-                    match first {
-                        Some(i) => placed.insert(i, id),
-                        None => placed.push(id),
+                    let before = if declares(&id) { name.and_then(|k| first_of.get(&k).copied()) } else { None };
+                    match before {
+                        Some(b) => {
+                            // Insert node i before node b.
+                            let p = prev[b];
+                            next[i] = b;
+                            prev[i] = p;
+                            prev[b] = i;
+                            if p == usize::MAX {
+                                head = i;
+                            } else {
+                                next[p] = i;
+                            }
+                        }
+                        None => {
+                            prev[i] = tail;
+                            if tail == usize::MAX {
+                                head = i;
+                            } else {
+                                next[tail] = i;
+                            }
+                            tail = i;
+                        }
                     }
-                } else {
-                    placed.push(id);
+                    if let Some(k) = name {
+                        // The first placed node of the name: a node inserted before it takes its place.
+                        match first_of.get(&k).copied() {
+                            Some(f) if before != Some(f) => {}
+                            _ => {
+                                first_of.insert(k, i);
+                            }
+                        }
+                    }
                 }
+                let mut placed: Vec<MemberId> = Vec::with_capacity(n);
+                let mut at = head;
+                while at != usize::MAX {
+                    placed.push(list[at]);
+                    at = next[at];
+                }
+                *list = placed;
             }
-            *list = placed;
         }
+        let t_members = started.elapsed();
         // Keyed by the name's symbol (`SymbolId::of` hashes the text, so a lookup by name allocates nothing).
-        let mut named: HashMap<(TypeId, dm_ir::SymbolId, bool), Vec<MemberId>> = HashMap::new();
+        let mut named: HashMap<(TypeId, dm_ir::SymbolId, bool), Vec<MemberId>> = HashMap::default();
         for (i, list) in own.iter().enumerate() {
             for &id in list {
                 if let Some(m) = tree.member(id) {
@@ -136,11 +181,13 @@ impl Model {
                 }
             }
         }
+        let t_named = started.elapsed();
         let root_abs = std::fs::canonicalize(root).unwrap_or_else(|_| root.to_path_buf());
         let mut sites = TypeSites::default();
         for chunk in rev.syntax.chunks().iter() {
             type_blocks(chunk.items(), "/", &mut sites);
         }
+        let t_sites = started.elapsed();
         let model = Model {
             blocks: (0..SITE_SHARDS).map(|_| Default::default()).collect(),
             bodies: std::sync::OnceLock::new(),
@@ -148,6 +195,8 @@ impl Model {
             keys: std::sync::OnceLock::new(),
             params: (0..SITE_SHARDS).map(|_| Default::default()).collect(),
             sites: (0..SITE_SHARDS).map(|_| Default::default()).collect(),
+            loc_files: Default::default(),
+            id: NEXT_MODEL.fetch_add(1, std::sync::atomic::Ordering::Relaxed),
             proc_sites: (0..SITE_SHARDS).map(|_| Default::default()).collect(),
             declarations: (0..SITE_SHARDS).map(|_| Default::default()).collect(),
             folded: std::sync::OnceLock::new(),
@@ -166,45 +215,121 @@ impl Model {
         model.file_paths();
         if trace() {
             eprintln!(
-                "analyze: model view: {} types, {} members, {} bodies in {:.1?}",
+                "analyze: model view: {} types, {} members, {} bodies in {:.1?} (members {:.1?}, names {:.1?}, type sites {:.1?}, files {:.1?})",
                 model.paths.len(),
                 model.occurrence.len(),
                 model.rev.bodies.len(),
-                started.elapsed()
+                started.elapsed(),
+                t_members,
+                t_named - t_members,
+                t_sites - t_named,
+                started.elapsed() - t_sites
             );
         }
         model
     }
 
-    fn bodies(&self) -> &HashMap<MemberId, Arc<dm_tree::frontend::StatementBody>> {
+    fn bodies(&self) -> &HashMap<MemberId, reuse::Body> {
         self.bodies.get_or_init(|| {
             use rayon::prelude::*;
             let started = std::time::Instant::now();
             let arena = dm_tree::frontend::BodyArena::new_typed(&self.rev, |_| true);
-            let parsed: Vec<(MemberId, Option<Arc<dm_tree::frontend::StatementBody>>)> = self
+            let text = self.rev.expanded.text.as_str();
+            // The previous model's bodies: a body whose text is unchanged is taken (moved when it moved) instead of parsed.
+            let kept = reuse::kept();
+            let verify = reuse::verify();
+            let parse = |o: &dm_tree::frontend::BodyOccurrence| arena.take_parsed(o).ok().and_then(|b| b.shared_statement_body()).map(reuse::Body::Parsed);
+            let made: Vec<(MemberId, Option<(u128, usize)>, Option<reuse::Body>, bool)> = self
                 .rev
                 .bodies
                 .par_iter()
-                .map(|o| (o.member, arena.take_parsed(o).ok().and_then(|b| b.shared_statement_body())))
+                .map(|o| {
+                    let key = reuse::key(text, o.expanded_span.start, o.expanded_span.end);
+                    if let Some((k, start)) = key {
+                        if let Some(b) = reuse::take(&kept, k, start) {
+                            if verify {
+                                let fresh = parse(o);
+                                if fresh.as_ref().map(|f| f.statements()) != Some(b.statements()) {
+                                    eprintln!("analyze: model view: a reused body differs from its parse (member {:?}, at {})", o.member, start);
+                                }
+                            }
+                            return (o.member, key, Some(b), true);
+                        }
+                    }
+                    (o.member, key, parse(o), false)
+                })
                 .collect();
-            let map: HashMap<_, _> = parsed.into_iter().filter_map(|(m, b)| b.map(|b| (m, b))).collect();
+            drop(kept);
+            let reused = made.iter().filter(|m| m.3).count();
+            let mut next: HashMap<u128, (reuse::Body, usize)> = HashMap::default();
+            let mut map: HashMap<MemberId, reuse::Body> = HashMap::default();
+            for (m, key, b, _) in made {
+                let Some(b) = b else { continue };
+                if let Some((k, start)) = key {
+                    next.insert(k, (b.clone(), start));
+                }
+                map.insert(m, b);
+            }
+            reuse::keep(next.into_iter().collect());
             if trace() {
-                eprintln!("analyze: model view: {} typed bodies parsed in {:.1?}", map.len(), started.elapsed());
+                eprintln!(
+                    "analyze: model view: {} typed bodies ({} kept from the previous model) in {:.1?} (process cpu {} ms)",
+                    map.len(),
+                    reused,
+                    started.elapsed(),
+                    crate::util::cpu_ms()
+                );
             }
             map
         })
     }
 
-    fn initializers(&self) -> &HashMap<MemberId, (dm_syntax::Expr, usize)> {
+    fn initializers(&self) -> &HashMap<MemberId, (Arc<dm_syntax::Expr>, usize)> {
         self.initializers.get_or_init(|| {
             use rayon::prelude::*;
             let started = std::time::Instant::now();
             let vars: Vec<MemberId> = self.own.iter().flatten().copied().filter(|id| self.node(*id).kind == MemberKind::Var).collect();
-            let parsed: Vec<(MemberId, Option<(dm_syntax::Expr, usize)>)> =
-                vars.par_iter().map(|&id| (id, Member { m: self, id }.parse_initializer())).collect();
-            let map: HashMap<_, _> = parsed.into_iter().filter_map(|(id, e)| e.map(|e| (id, e))).collect();
+            // The previous model's values, by the item's text: an unchanged declaration is not parsed again.
+            let kept = reuse::kept_values();
+            let verify = reuse::verify();
+            let parsed: Vec<(MemberId, Option<(u128, Arc<dm_syntax::Expr>, usize, usize)>, bool)> = vars
+                .par_iter()
+                .map(|&id| {
+                    let member = Member { m: self, id };
+                    let Some(start) = member.item_start() else { return (id, None, false) };
+                    let key = member.item_text().map(reuse::text_key);
+                    if let Some(k) = key {
+                        if let Some((e, rel)) = kept.get(&k) {
+                            if verify && member.parse_initializer().map(|(f, b)| (f, b - start)) != Some(((**e).clone(), *rel)) {
+                                eprintln!("analyze: model view: a reused initializer differs from its parse (member {:?})", id);
+                            }
+                            return (id, Some((k, e.clone(), *rel, start)), true);
+                        }
+                    }
+                    let made = member.parse_initializer().map(|(e, base)| (key.unwrap_or(0), Arc::new(e), base - start, start));
+                    (id, made, false)
+                })
+                .collect();
+            drop(kept);
+            let reused = parsed.iter().filter(|p| p.2).count();
+            let mut next = std::collections::HashMap::new();
+            let mut map: HashMap<MemberId, (Arc<dm_syntax::Expr>, usize)> = HashMap::default();
+            for (id, made, _) in parsed {
+                let Some((k, e, rel, start)) = made else { continue };
+                if k != 0 {
+                    next.insert(k, (e.clone(), rel));
+                }
+                map.insert(id, (e, start + rel));
+            }
+            reuse::keep_values(next);
             if trace() {
-                eprintln!("analyze: model view: {} var initializers parsed in {:.1?}", map.len(), started.elapsed());
+                eprintln!(
+                    "analyze: model view: {} var initializers ({} kept from the previous model) in {:.1?} (process cpu {} ms)",
+                    map.len(),
+                    reused,
+                    started.elapsed(),
+                    crate::util::cpu_ms()
+                );
             }
             map
         })
@@ -226,7 +351,7 @@ impl Model {
             let started = std::time::Instant::now();
             let f = consts::fold_all(self);
             if trace() {
-                eprintln!("analyze: model view: {} vars folded in {:.1?}", f.values.len(), started.elapsed());
+                eprintln!("analyze: model view: {} vars folded in {:.1?} (process cpu {} ms)", f.values.len(), started.elapsed(), crate::util::cpu_ms());
             }
             f
         })
@@ -268,22 +393,22 @@ impl Model {
 
     /// The file (repo-relative, `/` separated) and line of `site`; `None` for a site no source file holds.
     pub fn line(&self, site: Site) -> Option<(String, u32)> {
-        self.located(site).map(|(f, l, _)| (f.to_string(), l))
+        self.located(site).map(|l| (self.loc_file(l).to_string(), l.line))
     }
 
     /// Only the line of `site` (no file name allocated).
     pub fn line_no(&self, site: Site) -> Option<u32> {
-        self.located(site).map(|(_, l, _)| l)
+        self.located(site).map(|l| l.line)
     }
 
     /// The file of `site`, shared.
     pub fn file_arc(&self, site: Site) -> Option<Arc<str>> {
-        self.located(site).map(|(f, _, _)| f)
+        self.located(site).map(|l| self.loc_file(l))
     }
 
     /// Like [`Model::line`], with the column.
     pub fn line_column(&self, site: Site) -> Option<(String, u32, u32)> {
-        self.located(site).map(|(f, l, c)| (f.to_string(), l, c))
+        self.located(site).map(|l| (self.loc_file(l).to_string(), l.line, l.col))
     }
 
     /// `block` read as statements ([`walk::stmts`]), remembered by its address.
@@ -319,16 +444,61 @@ impl Model {
     }
 
     /// A site's file, line and column, remembered: the walks ask about the same terms many times.
-    fn located(&self, site: Site) -> Option<(Arc<str>, u32, u32)> {
+    fn located(&self, site: Site) -> Option<Loc> {
         profile::count(profile::SITE_HIT);
+        // A small direct-mapped cache per thread in front of the shared one: the walks ask the same sites again and again, and a
+        // lookup here takes no lock and touches no line another thread writes.
+        thread_local! {
+            static NEAR: std::cell::RefCell<Vec<(u64, u32, Option<Loc>)>> = const { std::cell::RefCell::new(Vec::new()) };
+        }
+        let slot = (site.0 as usize).wrapping_mul(0x9E37_79B9) >> 16 & (NEAR_SLOTS - 1);
+        let near = NEAR.with(|n| {
+            let n = n.borrow();
+            n.get(slot).and_then(|&(m, s, l)| (m == self.id && s == site.0).then_some(l))
+        });
+        if let Some(l) = near {
+            return l;
+        }
+        let found = self.located_shared(site);
+        NEAR.with(|n| {
+            let mut n = n.borrow_mut();
+            if n.is_empty() {
+                n.resize(NEAR_SLOTS, (0, 0, None));
+            }
+            n[slot] = (self.id, site.0, found);
+        });
+        found
+    }
+
+    fn located_shared(&self, site: Site) -> Option<Loc> {
         let shard = &self.sites[(site.0 as usize).wrapping_mul(0x9E37_79B9) >> 26 & (SITE_SHARDS - 1)];
         if let Some(hit) = shard.read().unwrap_or_else(|e| e.into_inner()).get(&site.0) {
-            return hit.clone();
+            return *hit;
         }
         profile::count(profile::SITE_MISS);
-        let found = self.rev.debug_site_column(site.0 as usize).map(|(path, line, column)| (self.rel_arc(&path), line as u32, column as u32));
-        shard.write().unwrap_or_else(|e| e.into_inner()).insert(site.0, found.clone());
+        let found = self.rev.debug_site_column(site.0 as usize).map(|(path, line, column)| Loc { file: self.intern_file(&path), line: line as u32, col: column as u32 });
+        shard.write().unwrap_or_else(|e| e.into_inner()).insert(site.0, found);
         found
+    }
+
+    /// The index of `path`'s repo-relative spelling in [`Model::loc_files`].
+    fn intern_file(&self, path: &Arc<str>) -> u32 {
+        let rel = self.rel_arc(path);
+        if let Some(&i) = self.loc_files.read().unwrap_or_else(|e| e.into_inner()).1.get(&rel) {
+            return i;
+        }
+        let mut files = self.loc_files.write().unwrap_or_else(|e| e.into_inner());
+        if let Some(&i) = files.1.get(&rel) {
+            return i;
+        }
+        let i = files.0.len() as u32;
+        files.0.push(rel.clone());
+        files.1.insert(rel, i);
+        i
+    }
+
+    fn loc_file(&self, l: Loc) -> Arc<str> {
+        self.loc_files.read().unwrap_or_else(|e| e.into_inner()).0[l.file as usize].clone()
     }
 
     fn rel_arc(&self, path: &Arc<str>) -> Arc<str> {
@@ -345,7 +515,12 @@ impl Model {
         }
         let p = Path::new(&**path);
         let abs = if p.is_absolute() { p.to_path_buf() } else { self.root.join(p) };
-        let abs = std::fs::canonicalize(&abs).unwrap_or(abs);
+        // A path already under the root needs no file system call (a canonicalize is milliseconds on Windows, and the model resolves
+        // every included file); anything else is canonicalized as before.
+        let abs = match abs.strip_prefix(&self.root_abs).or_else(|_| abs.strip_prefix(&self.root)) {
+            Ok(rel) if !rel.components().any(|c| matches!(c, std::path::Component::ParentDir | std::path::Component::CurDir)) => self.root_abs.join(rel),
+            _ => std::fs::canonicalize(&abs).unwrap_or(abs),
+        };
         let r: Arc<str> = match abs.strip_prefix(&self.root_abs) {
             Ok(rel) => rel.to_string_lossy().replace('\\', "/").into(),
             Err(_) => path.replace('\\', "/").into(),
@@ -357,6 +532,19 @@ impl Model {
     fn occurrence_site(&self, at: OccurrenceId) -> Option<Site> {
         self.rev.declaration_spans.get(at.0 as usize).map(|span| Site(span.start))
     }
+}
+
+/// Slots of the per-thread site cache ([`Model::located`]).
+const NEAR_SLOTS: usize = 1 << 16;
+
+static NEXT_MODEL: std::sync::atomic::AtomicU64 = std::sync::atomic::AtomicU64::new(1);
+
+/// Where a site is: its file (an index into the model's interned files), line and column.
+#[derive(Clone, Copy)]
+struct Loc {
+    file: u32,
+    line: u32,
+    col: u32,
 }
 
 /// A body block read as statements ([`Model::stmts`]), with each statement's line (0 for none), looked up once per block.
@@ -602,7 +790,7 @@ impl<'m> Member<'m> {
     /// The proc's typed body: none for a var, a builtin, or a body the compiler's parser rejected.
     pub fn body(&self) -> Option<&'m [dm_syntax::Statement]> {
         reads::note(|| self.key().map_or(reads::Read::Everything, reads::Read::Body));
-        self.m.bodies().get(&self.id).map(|b| &b.parsed().statements[..])
+        self.m.bodies().get(&self.id).map(|b| b.statements())
     }
 
     /// Whether the var is given a value: an initializer, or a size (`var/L[3]`, which starts as `new /list(3)`).
@@ -629,13 +817,13 @@ impl<'m> Member<'m> {
     /// A var's initializer as written (`= value`), parsed by the compiler's expression parser; none without a value.
     pub fn initializer(&self) -> Option<&'m dm_syntax::Expr> {
         self.note_declaration();
-        self.m.initializers().get(&self.id).map(|(e, _)| expr::specified(e).0)
+        self.m.initializers().get(&self.id).map(|(e, _)| expr::specified(&**e).0)
     }
 
     /// The initializer with the expanded offset its spans are relative to (add it to a node's span for a [`Site`]).
     pub fn initializer_at(&self) -> Option<(&'m dm_syntax::Expr, usize)> {
         self.note_declaration();
-        self.m.initializers().get(&self.id).map(|(e, base)| (expr::specified(e).0, *base))
+        self.m.initializers().get(&self.id).map(|(e, base)| (expr::specified(&**e).0, *base))
     }
 
     /// The parameters (procs and verbs), as the header spells them.
@@ -706,6 +894,12 @@ impl<'m> Member<'m> {
                 parsed.expr.filter(|_| parsed.diagnostics.is_empty()).map(|e| (e, base))
             }
         }
+    }
+
+    /// Where the member's declaration item starts in the expanded text.
+    fn item_start(&self) -> Option<usize> {
+        let at = *self.m.occurrence.get(&self.id)?;
+        self.m.rev.declaration_spans.get(at.0 as usize).map(|s| s.start as usize)
     }
 
     /// The member's expanded header text (its declaration item, the body excluded).

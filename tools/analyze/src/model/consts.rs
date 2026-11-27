@@ -4,7 +4,7 @@
 //! being folded (its parents', when it has no assignment of its own); `GLOB.x` on a typed null reads a const var of that type; a static
 //! or protected var that is not const is not folded, nor a non-const var of the root.
 
-use std::collections::HashMap;
+type HashMap<K, V> = std::collections::HashMap<K, V, foldhash::fast::FixedState>;
 
 use dm_syntax::{Expr, ExprKind};
 
@@ -70,7 +70,7 @@ pub struct Folded {
 }
 
 pub fn fold_all(m: &Model) -> Folded {
-    let mut f = Folder { m, state: HashMap::new() };
+    let mut f = Folder { m, state: HashMap::default() };
     for ty in m.types() {
         for name in ty.var_names() {
             let decl = ty.var_declaration(&name);
