@@ -65,4 +65,15 @@ describe('gitTreeKey', () => {
     expect((await runCaptured('git', ['no-such-command'])).status).not.toBe(0);
     expect((await runCaptured('no-such-binary-xyz', [])).error).toBeDefined();
   });
+
+  test('runCaptured returns when the process exits, though something it started still holds its pipes', async () => {
+    // The child prints, starts a detached process that inherits its stdout and stderr and lives 20 s, then exits at once.
+    const holder = "setTimeout(() => {}, 20000)";
+    const script = `process.stdout.write('answered\\n'); require('node:child_process').spawn(process.execPath, ['-e', ${JSON.stringify(holder)}], { detached: true, stdio: ['ignore', 'inherit', 'inherit'] }).unref();`;
+    const started = Date.now();
+    const result = await runCaptured(process.execPath, ['-e', script]);
+    expect(result.status).toBe(0);
+    expect(result.out).toContain('answered');
+    expect(Date.now() - started).toBeLessThan(10_000);
+  }, 30_000);
 });

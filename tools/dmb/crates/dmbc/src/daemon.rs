@@ -342,9 +342,35 @@ fn start() -> io::Result<()> {
     {
         use std::os::windows::process::CommandExt;
         command.creation_flags(0x08000000);
+        keep_standard_handles_from_daemon();
     }
     command.spawn()?;
     Ok(())
+}
+
+/// Windows passes every inheritable handle of this process to a child, not only the three the child is given as its standard
+/// streams. This client's own stdout and stderr are inheritable (that is how it got them), so a daemon started here kept its
+/// caller's pipe open for as long as it lived: a caller reading that pipe to the end (`runCaptured` in the build, a shell's
+/// `$(...)`) waited for the daemon's idle exit, about half an hour, after the client had answered and gone. Clearing the flag on
+/// this process's handles changes nothing for it; a later child given `Stdio::inherit()` gets its own inheritable duplicates.
+#[cfg(windows)]
+fn keep_standard_handles_from_daemon() {
+    use std::os::windows::io::AsRawHandle;
+    unsafe extern "system" {
+        fn SetHandleInformation(handle: *mut std::ffi::c_void, mask: u32, flags: u32) -> i32;
+    }
+    const HANDLE_FLAG_INHERIT: u32 = 1;
+    let handles = [
+        io::stdin().as_raw_handle(),
+        io::stdout().as_raw_handle(),
+        io::stderr().as_raw_handle(),
+    ];
+    for handle in handles {
+        if !handle.is_null() {
+            // SAFETY: the handle is this process's own standard handle; a failure (a closed or console handle) is harmless.
+            unsafe { SetHandleInformation(handle.cast(), HANDLE_FLAG_INHERIT, 0) };
+        }
+    }
 }
 
 #[cfg(test)]

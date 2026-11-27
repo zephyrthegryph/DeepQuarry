@@ -7,7 +7,7 @@
 // edit to an already-modified or ignored file changes the key). Extra files (a binary outside git, say) are keyed by size and mtime.
 // A file whose content is unchanged but was touched is not listed by status, so it keeps the key, which is the point.
 // Returns null when git is unavailable: callers then run their step as if the key had changed.
-import { execFile } from 'node:child_process';
+import { execFile, spawn } from 'node:child_process';
 import { createHash } from 'node:crypto';
 import fs from 'node:fs';
 
@@ -69,16 +69,36 @@ export const writeKeyRecord = (file: string, key: string): void => {
   fs.writeFileSync(file, JSON.stringify({ key, checkedAt: new Date().toISOString() }));
 };
 
-/** Async spawn with captured output (spawnSync blocks Bun's event loop, so every target beside it stalls for its whole run). */
+/** Async spawn with captured output (spawnSync blocks Bun's event loop, so every target beside it stalls for its whole run).
+ * Resolves when the process EXITS, then gives its pipes a moment to drain; it does not wait for the pipes to close. A child may
+ * leave something running that inherited those pipes (`analyze gen` starting the resident compiler daemon did), and waiting for
+ * the close then meant waiting for that process: a build sat in `gen` for half an hour until the idle daemon left. */
 export const runCaptured = (
   cmd: string,
   args: string[],
-  opts: { cwd?: string; env?: NodeJS.ProcessEnv } = {},
+  opts: { cwd?: string; env?: NodeJS.ProcessEnv; drainMs?: number } = {},
 ): Promise<{ status: number | null; out: string; error?: Error }> =>
   new Promise((resolve) => {
-    execFile(cmd, args, { ...opts, encoding: 'utf-8', maxBuffer: 256 * 1024 * 1024, windowsHide: true }, (err, stdout, stderr) => {
-      const out = `${stdout || ''}${stderr || ''}`;
-      if (err && typeof (err as NodeJS.ErrnoException).code === 'string') resolve({ status: null, out, error: err });
-      else resolve({ status: err ? ((err as { code?: number }).code ?? 1) : 0, out });
+    const { drainMs = 500, ...spawnOpts } = opts;
+    let stdout = '';
+    let stderr = '';
+    let settled = false;
+    const finish = (status: number | null, error?: Error) => {
+      if (settled) return;
+      settled = true;
+      child.stdout?.destroy();
+      child.stderr?.destroy();
+      const out = `${stdout}${stderr}`;
+      resolve(error ? { status: null, out, error } : { status, out });
+    };
+    const child = spawn(cmd, args, { ...spawnOpts, windowsHide: true, stdio: ['ignore', 'pipe', 'pipe'] });
+    child.stdout?.setEncoding('utf-8').on('data', (chunk: string) => { stdout += chunk; });
+    child.stderr?.setEncoding('utf-8').on('data', (chunk: string) => { stderr += chunk; });
+    child.on('error', (error) => finish(null, error));
+    let exitStatus: number | null = null;
+    child.on('exit', (code, signal) => {
+      exitStatus = code ?? (signal ? 1 : 0);
+      setTimeout(() => finish(exitStatus), drainMs);
     });
+    child.on('close', (code, signal) => finish(code ?? exitStatus ?? (signal ? 1 : 0)));
   });
