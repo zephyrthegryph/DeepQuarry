@@ -12,6 +12,7 @@
 pub mod builtins;
 pub mod consts;
 pub mod procs;
+pub mod reads;
 pub mod profile;
 pub mod expr;
 pub mod walk;
@@ -37,6 +38,8 @@ pub struct Model {
     /// it is dropped before the bodies it borrows from (see [`Model::stmts`]).
     blocks: Vec<std::sync::RwLock<HashMap<(usize, usize), Arc<Vec<walk::StmtAt<'static>>>>>>,
     rev: FrontendRevision,
+    /// Each declaration occurrence's stable identity (`dm_tree::frontend::declaration_keys`), built when a recording first asks.
+    keys: std::sync::OnceLock<Vec<Option<dm_tree::frontend::DeclarationKey>>>,
     /// Each var's initializer, parsed from its declaration item, with the expanded offset its spans are relative to.
     initializers: std::sync::OnceLock<HashMap<MemberId, (dm_syntax::Expr, usize)>>,
     /// Each var's folded constant (`consts::fold_all`), built when first asked.
@@ -139,6 +142,7 @@ impl Model {
             blocks: (0..SITE_SHARDS).map(|_| Default::default()).collect(),
             bodies: std::sync::OnceLock::new(),
             initializers: std::sync::OnceLock::new(),
+            keys: std::sync::OnceLock::new(),
             params: Default::default(),
             sites: (0..SITE_SHARDS).map(|_| Default::default()).collect(),
             declarations: (0..SITE_SHARDS).map(|_| Default::default()).collect(),
@@ -203,6 +207,8 @@ impl Model {
 
     /// Every var's folded constant.
     pub fn folded(&self) -> &consts::Folded {
+        // Every var's folded value reads every initializer it reaches.
+        reads::note(|| reads::Read::Everything);
         self.folded.get_or_init(|| {
             let started = std::time::Instant::now();
             let f = consts::fold_all(self);
@@ -235,6 +241,7 @@ impl Model {
     }
 
     pub fn types(&self) -> impl Iterator<Item = Ty<'_>> + '_ {
+        reads::note(|| reads::Read::Everything);
         (0..self.paths.len()).map(move |i| Ty { m: self, id: TypeId(i as u32) })
     }
 
@@ -354,6 +361,7 @@ impl<'m> Ty<'m> {
     }
 
     pub fn parent(&self) -> Option<Ty<'m>> {
+        reads::note(|| reads::Read::Parents(Arc::from(self.path())));
         self.m.rev.snapshot.tree.parent(self.id).map(|id| Ty { m: self.m, id })
     }
 
@@ -377,6 +385,7 @@ impl<'m> Ty<'m> {
 
     /// This type's own members (declarations and overrides), in declaration order.
     pub fn members(&self) -> impl Iterator<Item = Member<'m>> + 'm {
+        reads::note(|| reads::Read::Everything);
         let m = self.m;
         m.own[self.id.index()].iter().map(move |&id| Member { m, id })
     }
@@ -391,12 +400,14 @@ impl<'m> Ty<'m> {
 
     /// This type's own definitions of the var `name`, in order.
     pub fn own_vars_named(&self, name: &str) -> impl Iterator<Item = Member<'m>> + 'm {
+        reads::note(|| reads::Read::Lookup { owner: Arc::from(self.path()), name: Arc::from(name), kind: reads::LookupKind::Var });
         let m = self.m;
         m.named.get(&(self.id, dm_ir::SymbolId::of(name), true)).into_iter().flatten().map(move |&id| Member { m, id })
     }
 
     /// The ids of this type's own definitions of the proc `name`, in override order.
     pub(crate) fn own_proc_ids(&self, name: &str) -> &'m [MemberId] {
+        reads::note(|| reads::Read::Lookup { owner: Arc::from(self.path()), name: Arc::from(name), kind: reads::LookupKind::Proc });
         self.m.named.get(&(self.id, dm_ir::SymbolId::of(name), false)).map_or(&[], |v| &v[..])
     }
 
@@ -406,6 +417,7 @@ impl<'m> Ty<'m> {
 
     /// This type's own definitions of the proc `name`, in override order.
     pub fn own_procs_named(&self, name: &str) -> impl Iterator<Item = Member<'m>> + 'm {
+        reads::note(|| reads::Read::Lookup { owner: Arc::from(self.path()), name: Arc::from(name), kind: reads::LookupKind::Proc });
         let m = self.m;
         m.named.get(&(self.id, dm_ir::SymbolId::of(name), false)).into_iter().flatten().map(move |&id| Member { m, id })
     }
@@ -453,6 +465,7 @@ impl<'m> Member<'m> {
 
     /// The declared type path (`/obj/item`, `/list/mob` for a typed list), `""` when untyped or not a declaration.
     pub fn declared_type(&self) -> String {
+        self.note_declaration();
         let meta = &self.node().metadata;
         let base = meta.declared_type.map(|t| self.m.text(t)).unwrap_or("");
         // `var/list/list/x`, `var/list/T/x[3]`: the semantic tree keeps the runtime type (`/list`) and at most one element type; the
@@ -493,6 +506,7 @@ impl<'m> Member<'m> {
 
     /// The declaration flag bits (`DeclarationMeaning::flags`: 1 static, 2 const, 4 tmp, 8 global).
     pub fn flags(&self) -> u32 {
+        self.note_declaration();
         self.node().metadata.flags
     }
 
@@ -514,6 +528,7 @@ impl<'m> Member<'m> {
     /// Where the declaration is: a var's item; a proc's parameter list (its `(`), where dreammaker places a proc and which is the line
     /// of the name in a macro that writes the header over several lines.
     pub fn site(&self) -> Option<Site> {
+        reads::note(|| self.key().map_or(reads::Read::Everything, reads::Read::Site));
         let start = self.m.occurrence_site(*self.m.occurrence.get(&self.id)?)?;
         if self.kind() == MemberKind::Var {
             return Some(start);
@@ -530,8 +545,19 @@ impl<'m> Member<'m> {
         Some(start)
     }
 
+    /// This definition's stable identity (the front end delta's key), for a read receipt.
+    pub fn key(&self) -> Option<dm_tree::frontend::DeclarationKey> {
+        let at = *self.m.occurrence.get(&self.id)?;
+        self.m.keys.get_or_init(|| dm_tree::frontend::declaration_keys(&self.m.rev)).get(at.0 as usize)?.clone()
+    }
+
+    fn note_declaration(&self) {
+        reads::note(|| self.key().map_or(reads::Read::Everything, reads::Read::Declaration));
+    }
+
     /// The proc's typed body: none for a var, a builtin, or a body the compiler's parser rejected.
     pub fn body(&self) -> Option<&'m [dm_syntax::Statement]> {
+        reads::note(|| self.key().map_or(reads::Read::Everything, reads::Read::Body));
         self.m.bodies().get(&self.id).map(|b| &b.parsed().statements[..])
     }
 
@@ -558,16 +584,19 @@ impl<'m> Member<'m> {
 
     /// A var's initializer as written (`= value`), parsed by the compiler's expression parser; none without a value.
     pub fn initializer(&self) -> Option<&'m dm_syntax::Expr> {
+        self.note_declaration();
         self.m.initializers().get(&self.id).map(|(e, _)| expr::specified(e).0)
     }
 
     /// The initializer with the expanded offset its spans are relative to (add it to a node's span for a [`Site`]).
     pub fn initializer_at(&self) -> Option<(&'m dm_syntax::Expr, usize)> {
+        self.note_declaration();
         self.m.initializers().get(&self.id).map(|(e, base)| (expr::specified(e).0, *base))
     }
 
     /// The parameters (procs and verbs), as the header spells them.
     pub fn parameters(&self) -> Arc<Vec<Param>> {
+        self.note_declaration();
         if let Some(p) = self.m.params.lock().unwrap().get(&self.id) {
             return p.clone();
         }

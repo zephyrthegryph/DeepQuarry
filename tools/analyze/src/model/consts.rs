@@ -457,6 +457,7 @@ impl VarDeclaration {
 impl<'m> Ty<'m> {
     /// The declaration of `name` on this type or the nearest parent that declares it.
     pub fn var_declaration(&self, name: &str) -> Option<VarDeclaration> {
+        super::reads::note(|| super::reads::Read::Lookup { owner: std::sync::Arc::from(self.path()), name: std::sync::Arc::from(name), kind: super::reads::LookupKind::Var });
         super::profile::time(super::profile::VAR_DECL, || self.var_declaration_uncounted(name))
     }
 

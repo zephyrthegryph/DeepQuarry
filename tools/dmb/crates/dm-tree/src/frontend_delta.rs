@@ -101,6 +101,44 @@ struct Item {
     line: u32,
 }
 
+/// Every declaration occurrence's identity in this revision (indexed by `OccurrenceId`; `None` for one the tree does not hold): the keys
+/// the delta names, for a consumer that records which declarations it read and asks the next delta whether any of them changed.
+pub fn declaration_keys(frontend: &ColdFrontend) -> Vec<Option<DeclarationKey>> {
+    let tree = &frontend.snapshot.tree;
+    let symbols = tree.symbols();
+    let text = |id| symbols.text(id).map(Arc::<str>::from).unwrap_or_else(|| Arc::from(""));
+    let mut ordinals: HashMap<(Arc<str>, Arc<str>, Option<(Arc<str>, MemberKind)>), u32> = HashMap::new();
+    let mut out = Vec::with_capacity(frontend.declaration_regions.len());
+    for (index, &region) in frontend.declaration_regions.iter().enumerate() {
+        let occurrence = frontend.plan.regions[region as usize].occurrence;
+        let file = Arc::clone(&frontend.plan.occurrences[occurrence].semantic_path);
+        let (owner, member) = match tree.declarations().get(index) {
+            Some(Target::Type(id)) => match tree.type_node(*id) {
+                Some(node) => (text(node.path), None),
+                None => {
+                    out.push(None);
+                    continue;
+                }
+            },
+            Some(Target::Member(id)) => match tree.member(*id) {
+                Some(node) => (tree.type_node(node.owner).map(|t| text(t.path)).unwrap_or_else(|| Arc::from("")), Some((text(node.name), node.kind))),
+                None => {
+                    out.push(None);
+                    continue;
+                }
+            },
+            None => {
+                out.push(None);
+                continue;
+            }
+        };
+        let ordinal = ordinals.entry((Arc::clone(&file), Arc::clone(&owner), member.clone())).or_insert(0);
+        out.push(Some(DeclarationKey { file, owner, member, ordinal: *ordinal }));
+        *ordinal += 1;
+    }
+    out
+}
+
 /// The declarations and bodies of `files` in one revision, by identity.
 fn items_of(
     frontend: &ColdFrontend,

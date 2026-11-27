@@ -140,6 +140,7 @@ impl<'m> Proc<'m> {
 impl<'m> Ty<'m> {
     /// This type's definitions of `name`, in the order they override one another.
     pub fn proc_definitions(&self, name: &str) -> Vec<Proc<'m>> {
+        super::reads::note(|| super::reads::Read::Lookup { owner: Arc::from(self.path()), name: Arc::from(name), kind: super::reads::LookupKind::Proc });
         super::profile::time(super::profile::PROC_DEFS, || self.proc_definitions_uncounted(name))
     }
 
@@ -192,6 +193,7 @@ impl<'m> Ty<'m> {
 
     /// What `name` resolves to from this type: the last definition on the nearest type (this one first) that has any.
     pub fn proc(&self, name: &str) -> Option<Proc<'m>> {
+        super::reads::note(|| super::reads::Read::Lookup { owner: Arc::from(self.path()), name: Arc::from(name), kind: super::reads::LookupKind::Proc });
         super::profile::count(super::profile::PROC_RESOLVE);
         let mut cur = Some(*self);
         while let Some(t) = cur {

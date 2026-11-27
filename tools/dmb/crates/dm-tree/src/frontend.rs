@@ -10,7 +10,7 @@ mod parallel;
 mod delta;
 #[path = "frontend_origin_reuse.rs"]
 mod origin_reuse;
-pub use delta::{Change, DeclarationKey, FrontendDelta};
+pub use delta::{declaration_keys, Change, DeclarationKey, FrontendDelta};
 #[cfg(test)]
 #[path = "frontend_delta_tests.rs"]
 mod delta_tests;
