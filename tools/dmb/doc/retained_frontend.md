@@ -1125,3 +1125,30 @@ warnings; `analyze check --raw --no-cache` and `analyze dreamchecker --json` (in
 `check` run once reported three `ALLOW(decl)` annotations as unused; a second shuffled run and two plain runs did not, and the object
 tree is identical, so it is a flake of that lint's unused-annotation accounting, not slot order); `analysis-parity --tree` 1168027 of
 1168027, `analysis-parity` 105882 of 105882; dm-tree 318, dm-analysis 18 and dmbc 1135 unit tests pass.
+
+### Increment 3: the splice keeps slots (stable-slot path)
+
+`MetadataDependencies::splice` (`metadata_splice.rs`) now has two paths sharing one core (`rebind`: effective kinds of the fresh
+rows, the changed groups' chains, the descendant groups, inherited predecessors, the dirty cone) and one tail (`finish`: owner
+selections, callable names, the changed names' inventory, ancestry):
+
+- **Stable-slot path** (rows only added or changed in place, nothing removed, no type row changed, retained rows in the same
+  order, and every owner of an added row has a row of its own before the added one, so no type's first encounter moves and the
+  type roster cannot change): `stable_rows` walks the previous and current rosters in step (owners whose contribution is the same
+  allocation are compared by handle, the rest by key) and yields the current declaration targets with each added row's member
+  position, owner-local index and row index. Every retained slot keeps its node (the arena is shared chunk by chunk; a changed row
+  replaces its node in place); an added member is pushed into a new slot (`MemberArena::push`: a shared last chunk stays shared,
+  the node starts a new chunk); the order array gets one insert per added member; owner rosters change only for the owners of
+  added members; `direct` is the previous map plus the cone's edits. The type replay (`splice_types`, 0.15-0.18 s) is skipped.
+- **Renumbering path** (removals, type rows, a moved first encounter): unchanged from before (the arena rebuilt in authored order).
+
+After a stable splice the dependency graph is updated, not captured (`metadata_stable_graph.rs`,
+`MetadataDependencies::after_stable_splice`): rows and shapes inserted, nodes inserted at their member positions, the projection
+renumbered and the new keys inserted, `by_slot` (slot -> node, new) rebuilt, and only the predecessors whose dependants can differ
+(the old and new `previous` of every relinked or added slot) get their lists again, in declaration order. The graph's whole-tree
+resolution order is gone: `changed()` orders the dirty cone itself (Kahn over the cone's own edges, declaration order among
+ready nodes), so neither a capture nor a body edit walks 374k keys for it. `DMB_FRONTEND_VERIFY=1` captures afresh beside the
+update and logs `frontend verify: stable-slot dependency graph equals a fresh capture` (or the first difference).
+
+The callable roster survives a stable splice that touched only vars (`CallableRoster::rebind_after_stable_splice`: same types and
+ancestry, every indexed callable the same node): the outcome line says `callable roster after stable splice (N touched): kept`.

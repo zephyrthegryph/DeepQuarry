@@ -550,7 +550,6 @@ fn structural_adjacency_binds_current_order_before_allocating_changed_edges() {
         assert!(actual.roster == fresh.roster);
         assert_eq!(actual.members_at_declaration, fresh.members_at_declaration);
         assert_eq!(actual.projection, fresh.projection);
-        assert_eq!(actual.order, fresh.order);
         for node in &actual.nodes {
             let expected = &fresh.nodes[fresh.slot(node.key).unwrap()];
             assert_eq!(node.member, expected.member);

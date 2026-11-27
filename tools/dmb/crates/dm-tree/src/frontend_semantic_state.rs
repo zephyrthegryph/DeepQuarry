@@ -1,6 +1,6 @@
 //! Request-independent resolved declarations, never old source/body authority.
 use super::EngineSeed;
-use crate::{Provenance, SemanticTree, Skeleton, SnapshotError, TreeSnapshot};
+use crate::{MemberId, Provenance, SemanticTree, Skeleton, SnapshotError, TreeSnapshot};
 use std::sync::Arc;
 
 #[derive(Default)]
@@ -97,9 +97,22 @@ impl RetainedSemanticTree {
         self.declarations.begin_request(publishable)
     }
     fn discard_foreign_callable_roster(&mut self, tree: &Arc<SemanticTree>) {
+        self.discard_foreign_callable_roster_after(tree, None);
+    }
+    /// As `discard_foreign_callable_roster`; after a stable-slot splice that
+    /// touched only `touched` (vars), the roster is kept for the new tree.
+    fn discard_foreign_callable_roster_after(&mut self, tree: &Arc<SemanticTree>, touched: Option<&[MemberId]>) {
         if let Some(roster) = &self.callable_roster {
             if !roster.authenticates_tree(tree) {
-                self.callable_roster = roster.rebind_semantic_owner(tree);
+                let rebound = touched.and_then(|touched| roster.rebind_after_stable_splice(tree, touched));
+                if let Some(touched) = touched {
+                    crate::change_set::record_outcome(format!(
+                        "callable roster after stable splice ({} touched): {}",
+                        touched.len(),
+                        if rebound.is_some() { "kept" } else { "issued again" }
+                    ));
+                }
+                self.callable_roster = rebound.or_else(|| roster.rebind_semantic_owner(tree));
             }
         }
     }
@@ -453,6 +466,7 @@ impl RetainedSemanticTree {
         tick!("update_attempt");
         // Structural member edits: splice into the retained tree (change set).
         let mut spliced_dependencies = false;
+        let mut stable_splice = None;
         let mut verify_splice = None;
         let updated = match updated {
             Some(tree) => Some(tree),
@@ -487,6 +501,7 @@ impl RetainedSemanticTree {
                             None
                         } else {
                             spliced_dependencies = true;
+                            stable_splice = spliced.stable;
                             self.splices += 1;
                             Some(spliced.tree)
                         }
@@ -573,22 +588,55 @@ impl RetainedSemanticTree {
                 &mut entry.index,
                 index.expect("updated tree has its exact contribution index"),
             );
-            release_in_background((replaced_index, replaced_tree, replaced_contributions));
             tick!("swap_entry");
             let _capture_timer = dm_profile::detail_timer("tree.update.capture_dependencies");
             if spliced_dependencies {
-                // Dense IDs moved: reissue the stable-key graph for the next edit.
                 let previous = entry.metadata_dependencies.take();
-                entry.metadata_dependencies =
-                    crate::metadata_update::MetadataDependencies::capture(&tree, &entry.index);
+                entry.metadata_dependencies = match (&stable_splice, &previous) {
+                    // Slots kept: take the added members and the changed edges into the graph.
+                    (Some(stable), Some(graph)) => {
+                        let updated = graph.after_stable_splice(&replaced_tree, &tree, &entry.index, stable);
+                        if crate::frontend_verify_enabled() {
+                            let fresh = crate::metadata_update::MetadataDependencies::capture(&tree, &entry.index);
+                            let difference = match (&updated, &fresh) {
+                                (Some(updated), Some(fresh)) => updated.first_difference(fresh),
+                                (None, None) => None,
+                                (a, b) => Some(format!("updated {} fresh {}", a.is_some(), b.is_some())),
+                            };
+                            crate::change_set::record_outcome(match difference {
+                                None => "frontend verify: stable-slot dependency graph equals a fresh capture".to_string(),
+                                Some(difference) => format!("frontend verify: stable-slot dependency graph differs: {difference}"),
+                            });
+                        }
+                        match updated {
+                            Some(updated) => Some(updated),
+                            None => {
+                                crate::change_set::record_outcome("tree splice: stable dependency update declined; captured afresh".to_string());
+                                crate::metadata_update::MetadataDependencies::capture(&tree, &entry.index)
+                            }
+                        }
+                    }
+                    // Slots renumbered: reissue the stable-key graph for the next edit.
+                    _ => crate::metadata_update::MetadataDependencies::capture(&tree, &entry.index),
+                };
                 release_in_background(previous);
             }
+            release_in_background((replaced_index, replaced_tree, replaced_contributions));
             entry.symbol_catalog = adapted.symbol_catalog.clone();
             entry.leaves = adapted.skeletons.clone();
             entry.symbols = symbol_owner;
             // Body indexing follows this return and may fail. Do not keep the
             // previous tree rooted through its now-foreign callable roster.
-            self.discard_foreign_callable_roster(&tree);
+            let touched: Option<Vec<MemberId>> = stable_splice.as_ref().map(|stable| {
+                stable
+                    .relinked
+                    .iter()
+                    .copied()
+                    .chain(stable.added.iter().map(|added| added.1))
+                    .chain(stable.changed.iter().map(|changed| changed.0))
+                    .collect()
+            });
+            self.discard_foreign_callable_roster_after(&tree, touched.as_deref());
             self.normalization.release_publication();
             self.metadata_updates += 1;
             if unchanged_declarations {

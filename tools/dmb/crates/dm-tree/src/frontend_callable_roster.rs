@@ -186,6 +186,49 @@ impl CallableRoster {
         rebound.tree = tree.clone();
         Some(Arc::new(rebound))
     }
+    /// The roster for `tree`, a stable-slot splice of this roster's tree that
+    /// touched only `touched` (every retained slot holds the member it held):
+    /// when no touched member is callable and every indexed callable is the
+    /// same node, identities, chains, selection and the ABI are unchanged.
+    pub(super) fn rebind_after_stable_splice(
+        &self,
+        tree: &Arc<SemanticTree>,
+        touched: &[MemberId],
+    ) -> Option<Arc<Self>> {
+        let old = &self.tree;
+        if !Arc::ptr_eq(&old.owner_ancestry, &tree.owner_ancestry)
+            || old.types.len() != tree.types.len()
+            || old
+                .types
+                .iter()
+                .zip(tree.types.iter())
+                .any(|(a, b)| a.path != b.path || a.parent != b.parent)
+        {
+            return None;
+        }
+        for &id in touched {
+            let now = tree.member(id)?;
+            if now.kind != MemberKind::Var || old.member(id).is_some_and(|before| before.kind != MemberKind::Var) {
+                return None;
+            }
+        }
+        for &member in &self.index.members {
+            let (before, now) = (old.member(member)?, tree.member(member)?);
+            if before.owner != now.owner
+                || before.name != now.name
+                || before.kind != now.kind
+                || before.definition != now.definition
+                || before.previous != now.previous
+                || !(Arc::ptr_eq(&before.metadata, &now.metadata)
+                    || before.metadata.procedure == now.metadata.procedure)
+            {
+                return None;
+            }
+        }
+        let mut rebound = self.clone();
+        rebound.tree = Arc::clone(tree);
+        Some(Arc::new(rebound))
+    }
     pub(super) fn matches(&self, tree: &Arc<SemanticTree>, bodies: &[BodyOccurrence]) -> bool {
         self.authenticates_tree(tree)
             && self.index.source_order.windows(2).all(|pair| {

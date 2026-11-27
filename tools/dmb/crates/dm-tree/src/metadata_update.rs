@@ -13,6 +13,8 @@ pub(crate) use structural::StructuralMetadata;
 mod adjacency;
 #[path = "metadata_splice.rs"]
 pub(crate) mod splice;
+#[path = "metadata_stable_graph.rs"]
+mod stable_graph;
 
 #[derive(Clone, Copy, PartialEq, Eq)]
 enum Shape {
@@ -73,7 +75,8 @@ pub(crate) struct MetadataDependencies {
     members_at_declaration: Vec<Option<usize>>,
     nodes: Vec<DependencyNode>,
     projection: Vec<usize>,
-    order: Vec<DeclarationKey>,
+    /// Node index of each member slot (`u32::MAX` for none).
+    by_slot: Vec<u32>,
 }
 struct DependencyNode {
     key: DeclarationKey,
@@ -106,7 +109,7 @@ impl MetadataDependencies {
         vector(&self.members_at_declaration, &mut visit);
         vector(&self.nodes, &mut visit);
         vector(&self.projection, &mut visit);
-        vector(&self.order, &mut visit);
+        vector(&self.by_slot, &mut visit);
     }
     pub(crate) fn capture(tree: &SemanticTree, declarations: &KeyedDeclarations) -> Option<Self> {
         Self::capture_current(tree, declarations, None)
@@ -163,16 +166,16 @@ impl MetadataDependencies {
         }
         let mut stable_projection: Vec<_> = (0..nodes.len()).collect();
         stable_projection.sort_unstable_by_key(|&index| key_order(nodes[index].key));
-        let order = resolution_order(tree.members.len(), |id| tree.members[id].previous)
-            .into_iter()
-            .map(|id| keys[id.index()])
-            .collect();
+        let mut by_slot = vec![u32::MAX; tree.members.len()];
+        for (index, node) in nodes.iter().enumerate() {
+            by_slot[node.member.index()] = index as u32;
+        }
         Some(Self {
             roster: declarations.skeletons().map(shape).collect(),
             members_at_declaration,
             nodes,
             projection: stable_projection,
-            order,
+            by_slot,
         })
     }
     pub(crate) fn visit_edges(&self, mut visit: impl FnMut(&Arc<Vec<DeclarationKey>>)) {
@@ -242,15 +245,31 @@ impl MetadataDependencies {
                 }
             }
         }
-        Some(
-            self.order
-                .iter()
-                .filter_map(|key| {
-                    let slot = self.slot(*key).expect("validated stable dependency key");
-                    dirty[slot].then_some(self.nodes[slot].member)
-                })
-                .collect(),
-        )
+        // The dirty cone in inheritance order (a predecessor before its
+        // dependants), from its own edges: work proportional to the cone.
+        let mut indegree: HashMap<usize, u32> = queue.iter().map(|&node| (node, 0)).collect();
+        for &node in &queue {
+            for child in self.nodes[node].dependants.as_deref().into_iter().flatten() {
+                *indegree.get_mut(&self.slot(*child)?)? += 1;
+            }
+        }
+        let mut ready: Vec<usize> = queue.iter().copied().filter(|node| indegree[node] == 0).collect();
+        ready.sort_unstable();
+        let mut ordered = Vec::with_capacity(queue.len());
+        let mut cursor = 0;
+        while let Some(&node) = ready.get(cursor) {
+            cursor += 1;
+            ordered.push(self.nodes[node].member);
+            for child in self.nodes[node].dependants.as_deref().into_iter().flatten() {
+                let child = self.slot(*child)?;
+                let remaining = indegree.get_mut(&child)?;
+                *remaining -= 1;
+                if *remaining == 0 {
+                    ready.push(child);
+                }
+            }
+        }
+        (ordered.len() == queue.len()).then_some(ordered)
     }
 }
 

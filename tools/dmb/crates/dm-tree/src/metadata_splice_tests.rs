@@ -147,3 +147,30 @@ fn numeric_default_edit_is_reported_relative_to_the_previous_tree() {
     let typed = frontend(&mut state, &edited.replace("var/value = 9", "var/value = \"x\""));
     assert!(typed.snapshot.tree.default_edits().is_none());
 }
+
+/// Added members keep every retained slot: the new ones take slots past the
+/// end of the arena while the order array places them where they are declared.
+#[test]
+fn added_members_take_new_slots_and_keep_retained_ones() {
+    let mut state = RetainedSemanticTree::new();
+    let base = frontend(&mut state, BASE);
+    let base_tree = &base.snapshot.tree;
+    let mut source = BASE.to_string();
+    for (before, after) in [
+        ("    var/own = 2\n", "    var/extra = 5\n    var/own = 2\n"),
+        ("    proc/helper()\n        return 1\n", "    proc/helper()\n        return 1\n    proc/more()\n        return 4\n"),
+        ("/proc/probe()", "/datum/base/child/helper()\n    return extra\n/proc/probe()"),
+    ] {
+        source = source.replacen(before, after, 1);
+        let changed = frontend(&mut state, &source);
+        let tree = &changed.snapshot.tree;
+        same_as_fresh(tree, &source);
+        // Every retained slot still holds the member it held in the base tree.
+        for (slot, node) in base_tree.members().iter().enumerate() {
+            let now = tree.member(crate::MemberId(slot as u32)).unwrap();
+            assert_eq!((now.owner, now.name, now.kind), (node.owner, node.name, node.kind));
+        }
+        assert!(tree.member_order().iter().enumerate().any(|(position, id)| position != id.index()));
+    }
+    assert_eq!(state.splices(), 3);
+}

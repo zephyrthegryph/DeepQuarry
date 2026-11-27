@@ -1000,3 +1000,8 @@ mod shared_indexes_tests;
 
 #[cfg(test)]
 mod declaration_chain_tests;
+
+/// `DMB_FRONTEND_VERIFY=1`: incremental steps also compute their full answer and log any difference.
+pub(crate) fn frontend_verify_enabled() -> bool {
+    std::env::var_os("DMB_FRONTEND_VERIFY").is_some_and(|value| value == "1")
+}

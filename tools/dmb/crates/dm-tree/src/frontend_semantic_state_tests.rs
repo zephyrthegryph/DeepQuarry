@@ -679,3 +679,30 @@ fn structural_declaration_delta_remaps_current_graph_and_matches_fresh() {
         previous_index = Some(entry.index.clone());
     }
 }
+
+/// After a stable-slot splice the retained dependency graph is updated, not
+/// captured: it must equal a fresh capture of the spliced tree, and the next
+/// edit's splice must again match a fresh build.
+#[test]
+fn stable_splice_updates_the_dependency_graph_like_a_fresh_capture() {
+    let sources = [
+        "/datum/base\n    var/value=1\n    proc/run()\n        return 1\n/datum/child\n    parent_type=/datum/base\n    value=2\n    run()\n        return 2\n",
+        "/datum/base\n    var/value=1\n    var/added=3\n    proc/run()\n        return 1\n/datum/child\n    parent_type=/datum/base\n    value=2\n    run()\n        return 2\n",
+        "/datum/base\n    var/value=1\n    var/added=3\n    proc/run()\n        return 1\n/datum/mid\n    parent_type=/datum/base\n/datum/child\n    parent_type=/datum/base\n    value=2\n    run()\n        return 2\n    added=4\n",
+        "/datum/base\n    var/value=1\n    var/added=3\n    proc/run()\n        return 1\n    proc/more()\n        return 5\n/datum/child\n    parent_type=/datum/base\n    value=2\n    run()\n        return 2\n    added=4\n    more()\n        return ..()\n",
+    ];
+    let mut retained = RetainedSemanticTree::new();
+    for source in sources {
+        let actual = build(&mut retained, source);
+        let fresh = build(&mut RetainedSemanticTree::new(), source);
+        assert_eq!(
+            crate::metadata_update::splice::first_difference(&actual.snapshot.tree, &fresh.snapshot.tree),
+            None,
+            "{source}"
+        );
+        let entry = retained.entry.as_ref().unwrap();
+        let graph = entry.metadata_dependencies.as_ref().unwrap();
+        let captured = crate::metadata_update::MetadataDependencies::capture(&actual.snapshot.tree, &entry.index).unwrap();
+        assert_eq!(graph.first_difference(&captured), None, "{source}");
+    }
+}

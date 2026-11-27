@@ -50,6 +50,33 @@ impl MemberArena {
     }
 }
 impl MemberArena {
+    /// Append `node` in a new slot (`len()` before the call) and return the
+    /// slot. A last chunk another arena shares stays shared: the node starts a
+    /// new chunk; an unshared one with room takes it.
+    pub(crate) fn push(&mut self, node: MemberNode) -> usize {
+        let slot = self.len;
+        match self.chunks.last_mut() {
+            Some(last) if last.len() < CHUNK && Arc::strong_count(last) == 1 => {
+                let mut rows = last.to_vec();
+                rows.push(node);
+                *last = rows.into();
+            }
+            _ => {
+                let mut offsets = self.offsets.to_vec();
+                offsets.push(slot);
+                self.offsets = offsets.into();
+                self.chunks.push(Arc::from([node]));
+            }
+        }
+        self.len += 1;
+        self.fixed = self.fixed
+            && self
+                .offsets
+                .iter()
+                .enumerate()
+                .all(|(index, &start)| start == index * CHUNK);
+        slot
+    }
     /// Arena from `nodes` that shares the previous arena's longest prefix of
     /// equal chunks (same boundaries and nodes), then fixed-size chunks.
     /// Dense IDs shift after the first inserted or removed member, so only the
