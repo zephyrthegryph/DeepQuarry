@@ -185,6 +185,24 @@ fn same_origins(incremental: &ColdFrontend, cold: &ColdFrontend) {
     assert_eq!(incremental.region_hashes, cold.region_hashes);
 }
 
+/// The declarations themselves (what the carried chunks' contributions supply): the same skeletons, symbols, member tree,
+/// body terminations and expanded text as a cold build.
+fn same_declarations(incremental: &ColdFrontend, cold: &ColdFrontend) {
+    assert_eq!(incremental.expanded.text.as_str(), cold.expanded.text.as_str());
+    let (tree, fresh) = (&incremental.snapshot.tree, &cold.snapshot.tree);
+    assert_eq!(tree.declarations(), fresh.declarations());
+    assert_eq!(tree.symbols().ordered(), fresh.symbols().ordered());
+    assert_eq!(incremental.declaration_starts, cold.declaration_starts);
+    for (now, was) in incremental.bodies.iter().zip(cold.bodies.iter()) {
+        assert_eq!(now.member, was.member);
+        assert_eq!(now.ast_path, was.ast_path);
+    }
+    let terminations = |frontend: &ColdFrontend| {
+        frontend.issued_body_codes.iter().map(|owner| owner.termination.canonical_tag()).collect::<Vec<_>>()
+    };
+    assert_eq!(terminations(incremental), terminations(cold));
+}
+
 #[test]
 fn reused_origins_equal_a_cold_build_through_edits() {
     reused_origins_through_edits(1);
@@ -211,14 +229,24 @@ fn reused_origins_through_edits(stride: u64) {
         (A.into(), format!("// top\n{}/datum/b0/var/added = 1\n", many.replace("return 5", "return 55")), vec!["b.dm"]),
     ];
     let mut reused = 0;
+    let mut carried = 0;
+    let mut terminations = 0;
     for (revision, (a, b, changed)) in steps.into_iter().enumerate() {
         files = Files { a, b };
         let revision = (revision as u64 + 2) * stride;
         let incremental = build_revised(Some((&mut state, &memo)), &files, revision, &changed);
         reused += incremental.timings.reused_origins;
+        carried += incremental.timings.declaration_reuse.carried_chunks;
+        terminations += incremental.timings.reused_terminations;
         let cold = build_revised(None, &files, revision, &[]);
         same_origins(&incremental, &cold);
+        same_declarations(&incremental, &cold);
     }
     // The reuse ran: an unchanged file's origins came from the previous revision.
     assert!(reused > 0);
+    // Chunks the expansion copied took their key and contribution from the previous request's chunk table (the patch
+    // path; the adoption path re-expands through the ordered pass but still copies unchanged regions).
+    assert!(carried > 0, "no chunk was carried");
+    // Bodies inside interior carried chunks kept their previous termination (and `same_declarations` compared them).
+    assert!(terminations > 0, "no body termination was reused");
 }

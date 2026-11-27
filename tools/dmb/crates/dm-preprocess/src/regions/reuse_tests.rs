@@ -187,6 +187,7 @@ fn request(previous: &Step, files: &[(&str, &str)], memo: &Memo) -> Step {
         Some((expanded, _)) => {
             expansions_equal(&expanded, &full_expanded)
                 .unwrap_or_else(|why| panic!("expansion {why}"));
+            assert_carried(&expanded, &previous.expanded);
             expanded
         }
         None => full_expanded,
@@ -199,6 +200,35 @@ fn request(previous: &Step, files: &[(&str, &str)], memo: &Memo) -> Step {
         walked: walked_reuse,
         expansion,
     }
+}
+/// The reusing expansion's claim (`ExpandedRegions::carried`) holds: each run's bytes are the previous text's bytes, and its
+/// receipts are the previous receipts (same records, spans shifted by the run's move); runs are ascending and disjoint.
+fn assert_carried(expanded: &ExpandedRegions, previous: &ExpandedRegions) {
+    let carried = expanded.carried.as_deref().expect("a reusing expansion says what it carried");
+    assert!(carried.describes(&expanded.text, &previous.text.downgrade()));
+    let mut end = 0;
+    for run in &carried.runs {
+        assert!(run.start >= end, "runs are ascending and disjoint");
+        end = run.start + run.len;
+        assert_eq!(
+            &expanded.text[run.start..run.start + run.len],
+            &previous.text[run.previous_start..run.previous_start + run.len]
+        );
+        for (offset, index) in (run.receipts.0..run.receipts.1).enumerate() {
+            let (now, was) = (&expanded.receipts[index], &previous.receipts[run.previous_receipt + offset]);
+            assert!(Arc::ptr_eq(now.record(), was.record()));
+            assert_eq!(now.output_span().start - run.start, was.output_span().start - run.previous_start);
+            assert_eq!(now.output_span().end - now.output_span().start, was.output_span().end - was.output_span().start);
+            assert!(now.output_span().end <= run.start + run.len);
+        }
+        assert_eq!(CarriedText::previous_offset(run, run.start), run.previous_start);
+        if run.len > 0 {
+            assert_eq!(carried.run_holding(run.start, run.len), Some(run));
+        }
+    }
+    // A claim about other storage does not describe this text.
+    let copy = crate::SourceText::from(expanded.text.as_str().to_owned());
+    assert!(!carried.describes(&copy, &previous.text.downgrade()));
 }
 fn first(files: &[(&str, &str)], memo: &Memo) -> Step {
     let provider = Prepared::new(files, None);

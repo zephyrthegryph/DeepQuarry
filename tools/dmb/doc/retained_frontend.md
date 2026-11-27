@@ -1086,6 +1086,85 @@ What is left, and why:
   2.8 s, declaration parsing 3.5 s (grammar scan 1.0 s), plan 2.2 s (6,862 unchanged subtrees adopted, the rest replayed). That is
   work the edit causes; the cheap cuts were the delta compare (skipped above 256 files) and the origin reuse after adoption.
 
+### Round 3 (lane `compiler/body-edit-floor`, 2026-11-27)
+
+Goal: the hosted analysis front end of a one-line body edit (and a line-shifting edit) well under 200 ms, work proportional to the
+edit. The trace (`DQ_FRONTEND_TRACE=1`) confirmed the round 2 breakdown on master: declaration parsing 0.13-0.17 s of a 0.3-0.4 s
+front end on the loaded machine (grammar scan 0.044 s, chunk keys 0.049 s, per-chunk lookups 0.084 s summed over workers, symbol
+catalog 0.011 s), the joined text copy 0.028 s, the plan patch 0.017-0.036 s.
+
+What landed:
+
+- **The expansion says what it copied** (`ExpandedRegions::carried`, `dm_preprocess::regions::CarriedText`). A reusing expansion
+  records each run of the joined text it copied from the previous text (where, from where, which receipts), tied to the two exact
+  storages (`WeakSourceText`): a consumer that kept per-offset results of the previous revision takes them for those bytes instead of
+  reading the bytes again. A text replaced after the fact, or a claim about another previous text, is no claim (`describes`).
+- **Grammar check of changed regions only.** `CurrentPieces::capture` compares a receipt's bytes only when it is not carried from a
+  joined text the roster already proved (`Proven`, the last few proved texts by weak identity); the convergence's common prefix and
+  suffix are found by piece identity (`SourceText::same_view`), so only the pieces around the edit are compared, and `SourceText`
+  equality is O(1) for the same view.
+- **Chunk keys and lookups by offset.** Each request records its chunk table (offsets, keys, the contribution each chunk was bound to,
+  and the spelling state it left). A chunk inside a carried run, at the mapped offset with the same length as a previous chunk, takes
+  that chunk's key (no hash) and is looked up with the previous contribution's source as the known equal bytes (no byte compare in
+  the observation replay or the binding). The symbol catalog applies only the contributions that left and joined (`CatalogDelta`,
+  `ActiveSymbols::update_known`); the spelling counts are shared between requests and copied only when spellings change.
+- **Body terminations by reuse.** A body in a chunk that, with the next chunk, is the previous revision's pair (same contributions,
+  one copied run) keeps the previous body's termination (98 % of bodies on a body edit).
+- **Share instead of copy.** The plan's terminal macros (20k) and dependencies are `Arc`s a patched plan shares; the patched plan's
+  own source map is the capture (no copy of 8.5k paths); the joined text is copied in parallel 1 MB blocks into memory that is not
+  zeroed first; occurrences are collected straight into their shared slice; origin and body rows are filled as columns
+  (`parallel::chunked_columns`, no vector of tuples split again); a body reuses the previous body's AST path; the body index is a
+  dense table (`BodyIndex`) instead of 120k hashed inserts; bodies find their declaration from a cursor instead of a binary search
+  over 374k starts per body; declaration spans are collected leaf by leaf in parallel; the delta reads only the edited file's
+  bodies through the index.
+- **No-op.** The watcher refresh checks the few files an event named on the calling thread (waking the pool was most of a no-op
+  on the loaded machine) and judges each directory once, not once per kept file.
+- **Proof hooks.** `DMB_FRONTEND_VERIFY=1` now carries the reusing expansion on when it equals the full one (so the carried paths
+  run under verification) and checks every carried chunk's key and contribution against its bytes and every reused termination
+  against the lexed one. New tests: the carried claim in every `reuse_tests` step, the incremental pipeline against a cold build
+  through edits (declarations, symbols, starts, AST paths, terminations; carried chunks and reused terminations must occur), the
+  known catalog delta against the full update.
+
+Measured (hosted analysis front end, `analyze dreamchecker --json --parse-only` with `DQ_ANALYZE_PARSE=dmbc`,
+`DQ_ANALYZE_MODEL_MEMO=0`; `tools/dmb/scripts/frontend_edit_pair.sh` asks a master daemon (e5a2c2b85f) and a daemon of this branch in turn after every
+edit, so both see the same edits under the same load; the machine stayed at 60-100 % CPU from other lanes, 12 requests each):
+
+| Edit | master: quietest / median | this round: quietest / median | phases alone (no watcher, no delta), this round |
+|---|---|---|---|
+| one-line body edit and its revert | 0.335 / 0.474 s | 0.146 / 0.255 s | 0.122 / 0.165 s |
+| line-shifting edit and its revert | 0.317 / 0.706 s | 0.133 / 0.283 s | 0.109 / 0.206 s |
+| no-op (the remembered front end; the watcher sync is all) | 0.012-0.22 s | 0.007-0.032 s, median 0.013 s (a few named files checked on the calling thread, each directory judged once) | |
+
+The quietest body edit (0.146 s): watcher 0.015, plan 0.014, expansion 0.016 (joined text 0.009 for 89 MB), declaration parsing
+0.022 (was 0.13-0.17: grammar 0.002, keys 0.003, lookups 0.008, catalog 0.001), declaration spans 0.004, origins 0.016, tree
+0.008, body indexing 0.022, terminations 0.008 (98 % reused), the rest 0.012, delta 0.003. Under load every phase stretches two to
+five times, and a request now and then waits seconds outside the phases (the daemon's pages after other lanes' memory use).
+
+What is left, and why: every remaining phase is a pass over a flat per-declaration or per-body array of the whole program (374k
+origins, 374k occurrences, 120k bodies, 17k regions, 12k chunks), each 2-20 ms. They are cheap per item now (no hashing, no byte
+compares, no binary searches, no copies of shared tables), but their size is the program's, not the edit's. Removing them needs
+those arrays chunked by grammar chunk or region and shared between revisions (an `Arc` per chunk of origins, bodies and occurrences,
+with a revision's arrays a list of chunk handles): an edit would then rebuild only the edited chunks. That changes the shape every
+consumer of `ColdFrontend`, `TreeSnapshot` and `BodyOccurrence` reads (the compile, the analysis conversion, DreamChecker, the
+body arena), so it is its own lane. The joined text copy (89 MB, parallel) goes with it: the text would be a rope of region outputs.
+
+Proof: dm-tree (315), dm-preprocess (165) and dmbc (1135) unit tests pass (`input_snapshot::watch_tests::watched_validation_...`, a file
+watcher timing test this lane does not touch, failed once in four isolated runs on the loaded machine and passes in the full run).
+`DMB_FRONTEND_VERIFY=1` on every incremental request, analysis and compile: the plan equals the full plan, the reusing expansion the
+full expansion, every carried chunk's key and contribution its bytes (12,156 analysis, 10,498 compile), every reused origin the full
+lookup (374,618 / 346,510), every reused body the full indexing (118,027 / 105,149), every reused termination the lexed one
+(117,963 / 105,077); no mismatch. Hosted against cold in the same daemon (`DQ_ANALYZE_HOSTED_FRONTEND=0`), `analyze dreamchecker
+--json` and `analyze check --raw --no-cache` byte-identical at base, body edit, line shift, new var, new proc and revert. Memory
+pressure from other lanes interfered three times and each step was repeated: the base cold run was refused by the daemon (3.4 GB
+free) and ran in the client, the first body-edit request found its session released under pressure (a cold build), so the body edit
+was asked again right after a warm base (incremental, verified, identical), and the first new-proc cold `check` died with no output
+(asked again: identical, 473,002 bytes). `analysis-parity --tree` 1,168,032 of 1,168,032 and `analysis-parity` 105,883 of 105,883.
+Compile: a daemon full compile equals the one-shot cold compile byte for byte; a daemon patch compile (body edit, line shift,
+revert) is `dmb-equiv` EQUIVALENT to the one-shot cold compile but 42-43 bytes longer: the string an edit replaced stays in the
+string table after the patch. The compiler of master (e5a2c2b85f) gives the same bytes as this branch for the same daemon sequence
+(body full `e5bbe71d`, line shift patch `631be3d3`, revert patch `631be3d3`), so the leftover string is older than this lane (the
+compile workstream's to look at); this lane's compile output equals master's.
+
 ## Stable member slots (lane `compiler/stable-member-slots`, 2026-11-27)
 
 Decided design (round 2's open decision): a `MemberId` is a storage slot that never moves; declaration order is a separate array,

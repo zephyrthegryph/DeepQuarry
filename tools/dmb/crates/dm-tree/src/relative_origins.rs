@@ -33,6 +33,14 @@ impl OriginRoster {
             Self::Bound(v) => v.len,
         }
     }
+    /// The bound leaves (contribution and its offset in the joined text), for a caller that walks them in parallel; `None`
+    /// for an owned roster.
+    pub(crate) fn bound_leaves(&self) -> Option<&[(Arc<Contribution>, usize)]> {
+        match self {
+            Self::Bound(roster) => Some(&roster.chunks),
+            Self::Owned(_) => None,
+        }
+    }
     pub(crate) fn iter(&self) -> impl Iterator<Item = OriginView<'_>> {
         let owned = match self {
             Self::Owned(v) => Some(v.as_slice()),

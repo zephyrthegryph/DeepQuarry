@@ -216,6 +216,7 @@ fn assemble(
         return None;
     }
     let mut reuse = PlanReuse::default();
+    let copy_started = std::time::Instant::now();
     let mut occurrences = previous.occurrences.clone();
     let mut regions = previous.regions.clone();
     let mut items = previous.items.clone();
@@ -268,6 +269,8 @@ fn assemble(
         }
         reuse.subtrees += segment.sub.adopted;
     }
+    reuse.timings.assemble_copy = copy_started.elapsed();
+    let trace_started = std::time::Instant::now();
     // Trace entries: the previous ones outside the replaced subtrees stay as they are; the new
     // ones replace those inside.
     let mut entries: Vec<TraceEntry> = trace
@@ -291,6 +294,9 @@ fn assemble(
             });
         }
     }
+    let trace = Arc::new(PlanTrace::new(entries));
+    reuse.timings.assemble_trace = trace_started.elapsed();
+    let maps_started = std::time::Instant::now();
     let mut source_texts = previous.source_texts.clone();
     let mut source_line_starts = previous.source_line_starts.clone();
     for segment in &segments {
@@ -309,6 +315,7 @@ fn assemble(
             .collect(),
     );
     reuse.copied_regions = region_map.iter().flatten().count();
+    reuse.timings.assemble_maps = maps_started.elapsed();
     reuse.regions = region_map;
     Some((
         DirectivePlan {
@@ -324,7 +331,7 @@ fn assemble(
             final_macros: previous.final_macros.clone(),
             file_dirs: previous.file_dirs.clone(),
             project_dir: previous.project_dir.clone(),
-            trace: Some(Arc::new(PlanTrace::new(entries))),
+            trace: Some(trace),
             input_revision: None,
             defines: previous.defines.clone(),
         },

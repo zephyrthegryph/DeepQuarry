@@ -156,9 +156,13 @@ pub fn expand_regions_reusing(
     let mut outputs = expand_indices(plan, &fresh, memo, executor).into_iter();
     let expand = expand_started.elapsed();
     let text_started = std::time::Instant::now();
-    let mut text = String::with_capacity(prev.text.len() + 4096);
+    // The joined text is laid out first (where each piece goes) and copied after, in parallel: one serial copy of the whole
+    // text into a fresh allocation was most of this step (the copy and the first touch of every page).
+    let mut pieces: Vec<SourceText> = Vec::new();
+    let mut length = 0usize;
     let mut receipts = Vec::with_capacity(emission.len());
     let mut parts = Vec::new();
+    let mut runs: Vec<super::CarriedRun> = Vec::new();
     let mut stats = ExpansionReuse::default();
     let mut slot = 0usize;
     while slot < emission.len() {
@@ -169,12 +173,13 @@ pub fn expand_regions_reusing(
                 return None;
             }
             let record = output.receipt?;
-            let start = text.len();
-            text.push_str(&output.text);
+            let start = length;
+            length += output.text.len();
+            pieces.push(output.text.clone());
             let lines = output.lines;
             receipts.push(RegionReceipt {
                 region,
-                output: Span::new(start, text.len()),
+                output: Span::new(start, length),
                 record,
                 rows: lines.len(),
             });
@@ -207,8 +212,17 @@ pub fn expand_regions_reusing(
         }
         let from = prev.receipts[first].output.start;
         let to = prev.receipts[last].output.end;
-        let start = text.len();
-        text.push_str(prev.text.get(from..to)?);
+        let start = length;
+        prev.text.get(from..to)?;
+        pieces.push(prev.text.checked_view(from..to)?);
+        length += to - from;
+        runs.push(super::CarriedRun {
+            start,
+            previous_start: from,
+            len: to - from,
+            receipts: (receipts.len(), receipts.len() + (last - first + 1)),
+            previous_receipt: first,
+        });
         let output_shift = start as i64 - from as i64;
         for (offset, position) in (first..=last).enumerate() {
             let old = &prev.receipts[position];
@@ -231,6 +245,7 @@ pub fn expand_regions_reusing(
         stats.rows_moved += row_starts[last + 1] - row_starts[first];
         slot = end;
     }
+    let text = joined(&pieces, length, executor);
     let text_elapsed = text_started.elapsed();
     let rows_started = std::time::Instant::now();
     let origins = prev.origins.assembled(parts)?;
@@ -238,10 +253,12 @@ pub fn expand_regions_reusing(
     stats.expand = expand;
     stats.text = text_elapsed;
     stats.rows = rows_started.elapsed();
+    let carried = Arc::new(super::CarriedText { text: text.downgrade(), previous: prev.text.downgrade(), runs });
     Some((
         ExpandedRegions {
             input_keys: Arc::new(input_keys),
-            text: SourceText::from(text),
+            carried: Some(carried),
+            text,
             tokens: Vec::new(),
             origins,
             emission_regions: emission,
@@ -251,6 +268,54 @@ pub fn expand_regions_reusing(
         },
         stats,
     ))
+}
+
+/// The concatenation of `pieces` (`length` bytes in all), copied in parallel blocks into an allocation that is never zeroed
+/// first (zeroing 90 MB and then copying over it was most of the time).
+fn joined(pieces: &[SourceText], length: usize, executor: &dm_exec::BuildExecutor) -> SourceText {
+    use std::mem::MaybeUninit;
+    const BLOCK: usize = 1 << 20;
+    let mut bytes: Vec<u8> = Vec::with_capacity(length);
+    // Every piece split into blocks of at most BLOCK bytes, each paired with its own disjoint destination.
+    let mut jobs: Vec<(&[u8], &mut [MaybeUninit<u8>])> = Vec::new();
+    let mut rest: &mut [MaybeUninit<u8>] = &mut bytes.spare_capacity_mut()[..length];
+    for piece in pieces {
+        for block in piece.as_bytes().chunks(BLOCK) {
+            let (into, tail) = std::mem::take(&mut rest).split_at_mut(block.len());
+            jobs.push((block, into));
+            rest = tail;
+        }
+    }
+    assert!(rest.is_empty(), "joined text pieces do not add up to its length");
+    let copy = |from: &[u8], into: &mut [MaybeUninit<u8>]| {
+        assert_eq!(from.len(), into.len());
+        // SAFETY: `into` is exactly `from.len()` bytes of the destination that nothing else refers to, and the two never
+        // overlap (one is a source text, the other a fresh allocation).
+        unsafe { std::ptr::copy_nonoverlapping(from.as_ptr(), into.as_mut_ptr().cast::<u8>(), from.len()) };
+    };
+    let workers = executor.workers().max(1);
+    if workers == 1 || length < 4 * BLOCK {
+        for (from, into) in jobs {
+            copy(from, into);
+        }
+    } else {
+        let per = jobs.len().div_ceil(workers);
+        executor.scope(|scope| {
+            for part in jobs.chunks_mut(per) {
+                scope.spawn(move |_| {
+                    for (from, into) in part.iter_mut() {
+                        copy(from, into);
+                    }
+                });
+            }
+        });
+    }
+    // SAFETY: every byte of the first `length` was written above (the jobs cover them exactly, the assert holds), and they
+    // are the pieces' bytes in order, each piece a `str`: their concatenation is valid UTF-8.
+    unsafe {
+        bytes.set_len(length);
+        SourceText::from(String::from_utf8_unchecked(bytes))
+    }
 }
 
 /// Whether a reusing expansion equals a full one (verification mode): the text, every origin row

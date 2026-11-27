@@ -107,6 +107,8 @@ impl WatchedSources {
     /// Brings every kept text up to date with the disk under `root` (the watched project directory) and starts a new revision
     /// when one changed. Call once at the start of a request, before the front end reads.
     pub fn refresh(&self, root: &Path) -> Refresh {
+        /// Fewer candidates than this are checked on the calling thread.
+        const SERIAL_CHECKS: usize = 64;
         let started = Instant::now();
         crate::fs_watch::arm(root);
         crate::fs_watch::sync(root);
@@ -126,33 +128,45 @@ impl WatchedSources {
         };
         // The candidates: with the watcher, files in a directory an event named (or one it does not cover); without it, every
         // file. A candidate is read again only when its stamp (size, modification time) moved, and its text compared.
+        // Files are kept sorted by path, so the files of one directory come together: each directory is judged once (the
+        // judgement builds a comparison key and consults the link memo), not once per file.
+        let mut judged: Option<(&Path, bool)> = None;
         let candidates: Vec<(&PathBuf, &Entry)> = state
             .files
             .iter()
             .filter(|(path, _)| match &changes {
-                Some(changes) => path.parent().is_none_or(|dir| !changes.clean(dir)),
+                Some(changes) => path.parent().is_none_or(|dir| {
+                    let dirty = match judged {
+                        Some((last, dirty)) if last == dir => dirty,
+                        _ => !changes.clean(dir),
+                    };
+                    judged = Some((dir, dirty));
+                    dirty
+                }),
                 None => true,
             })
             .collect();
         let checked = candidates.len();
         // (path, new entry, whether its text changed)
-        let updated: Vec<(PathBuf, Entry, bool)> = {
+        let check = |(path, old): (&PathBuf, &Entry)| {
+            if old.stamp.is_some() && stamp(path) == old.stamp {
+                return None;
+            }
+            let fresh = read_entry(path);
+            if same_text(&fresh, old) {
+                // The same bytes under a new stamp: keep the text, remember the stamp.
+                return (fresh.stamp != old.stamp)
+                    .then(|| (path.clone(), Entry { text: old.text.clone(), stamp: fresh.stamp }, false));
+            }
+            Some((path.clone(), fresh, true))
+        };
+        // The watcher names a few files after an edit: checking them here costs less than waking the pool (which a loaded
+        // machine makes slow); a sweep or a first request checks thousands in parallel.
+        let updated: Vec<(PathBuf, Entry, bool)> = if candidates.len() < SERIAL_CHECKS {
+            candidates.into_iter().filter_map(check).collect()
+        } else {
             use rayon::prelude::*;
-            candidates
-                .into_par_iter()
-                .filter_map(|(path, old)| {
-                    if old.stamp.is_some() && stamp(path) == old.stamp {
-                        return None;
-                    }
-                    let fresh = read_entry(path);
-                    if same_text(&fresh, old) {
-                        // The same bytes under a new stamp: keep the text, remember the stamp.
-                        return (fresh.stamp != old.stamp)
-                            .then(|| (path.clone(), Entry { text: old.text.clone(), stamp: fresh.stamp }, false));
-                    }
-                    Some((path.clone(), fresh, true))
-                })
-                .collect()
+            candidates.into_par_iter().filter_map(check).collect()
         };
         let mut changed_paths = Vec::new();
         for (path, entry, changed) in updated {

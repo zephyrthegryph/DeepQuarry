@@ -7,13 +7,31 @@ pub(super) struct ScanResult {
     pub(super) reused: usize,
     pub(super) scanned_bytes: usize,
 }
-fn common_bytes(source: &str, old: &GrammarAnswer) -> Option<(usize, usize, usize)> {
+/// The common prefix and suffix of `source` and the previous pieces, in bytes, and the previous length. `current`, when given, is
+/// this source as pieces (`CurrentPieces::capture` proved `source` is their concatenation): a leading or trailing piece that is
+/// the same storage as the previous one is common without reading its bytes, so an edit compares only the pieces around it.
+fn common_bytes(
+    source: &str,
+    current: Option<&GrammarAnswer>,
+    old: &GrammarAnswer,
+) -> Option<(usize, usize, usize)> {
     let records = old.pieces()?;
+    let current = current.and_then(GrammarAnswer::pieces);
     let old_len = records
         .iter()
         .try_fold(0usize, |sum, value| sum.checked_add(value.len()))?;
     let mut prefix = 0usize;
-    for record in records.iter() {
+    let mut shared_prefix = 0usize;
+    if let Some(current) = current {
+        while shared_prefix < current.len()
+            && shared_prefix < records.len()
+            && current[shared_prefix].same_view(&records[shared_prefix])
+        {
+            prefix += records[shared_prefix].len();
+            shared_prefix += 1;
+        }
+    }
+    for record in records[shared_prefix..].iter() {
         let current = source.as_bytes().get(prefix..)?;
         let bytes = record.as_bytes();
         if current.get(..bytes.len()) == Some(bytes) {
@@ -32,7 +50,21 @@ fn common_bytes(source: &str, old: &GrammarAnswer) -> Option<(usize, usize, usiz
     }
     let maximum = (source.len() - prefix).min(old_len - prefix);
     let mut suffix = 0usize;
-    for record in records.iter().rev() {
+    let mut shared_suffix = 0usize;
+    if let Some(current) = current {
+        while shared_suffix < current.len() && shared_suffix < records.len() && suffix < maximum {
+            let (now, was) = (&current[current.len() - 1 - shared_suffix], &records[records.len() - 1 - shared_suffix]);
+            if !now.same_view(was) || suffix + was.len() > maximum {
+                break;
+            }
+            suffix += was.len();
+            shared_suffix += 1;
+        }
+        if suffix == maximum && shared_suffix > 0 {
+            return Some((prefix, suffix, old_len));
+        }
+    }
+    for record in records.iter().rev().skip(shared_suffix) {
         let bytes = record.as_bytes();
         let limit = bytes.len().min(maximum - suffix);
         let end = source.len() - suffix;
@@ -57,13 +89,14 @@ fn common_bytes(source: &str, old: &GrammarAnswer) -> Option<(usize, usize, usiz
 }
 pub(super) fn build(
     source: &str,
+    current: Option<&GrammarAnswer>,
     previous: Option<(&GrammarDescriptors, &GrammarAnswer)>,
 ) -> Result<ScanResult, &'static str> {
     let proof = previous.and_then(|(descriptors, answer)| {
         if descriptors.spans.len() != descriptors.starts.len() {
             return None;
         }
-        let (prefix, suffix, len) = common_bytes(source, answer)?;
+        let (prefix, suffix, len) = common_bytes(source, current, answer)?;
         (len == descriptors.source_len).then_some((descriptors, prefix, suffix, len))
     });
     let restart = proof.map_or(0, |(old, prefix, _, _)| {
