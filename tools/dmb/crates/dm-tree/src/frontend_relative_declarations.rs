@@ -391,6 +391,10 @@ impl DeclarationSyntax {
                     })
             })
     }
+    /// How many procedure bodies each chunk holds, in chunk order (`body_recipes` walks them in this order).
+    pub(crate) fn body_counts(&self) -> impl Iterator<Item = usize> + '_ {
+        self.chunks.iter().map(|chunk| chunk.relative.bodies.len())
+    }
     pub(crate) fn new(chunks: Vec<CurrentSyntaxChunk>) -> Result<Self, BindingError> {
         // Public compatibility binding may supply unsorted/overlapping chunks.
         // Preserve iteration but decline coordinate authority for that topology.

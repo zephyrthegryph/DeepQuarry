@@ -125,6 +125,8 @@ pub struct FrontendTimings {
     pub phases: Vec<(&'static str, Duration)>,
     /// Declarations whose origin was taken from the previous revision (`frontend_origin_reuse.rs`).
     pub reused_origins: usize,
+    /// Procedure body terminations taken from the previous revision (interior carried chunks).
+    pub reused_terminations: usize,
 }
 impl FrontendTimings {
     pub(crate) fn phase(&mut self, name: &'static str, started: Instant) {
@@ -1244,7 +1246,7 @@ impl BodyReuse<'_> {
         member: MemberId,
         span: dm_syntax::Span,
         mapping: &Mapping<'_>,
-    ) -> Option<(SourceLocation, &'b BodyOccurrence)> {
+    ) -> Option<(SourceLocation, &'b BodyOccurrence, usize)> {
         let (region, previous) = (*self.origins.get(index)?)?;
         let at = *self.base.body_by_declaration.get(&OccurrenceId(previous))?;
         let old = self.base.bodies.get(at)?;
@@ -1261,7 +1263,7 @@ impl BodyReuse<'_> {
             source.semantic_path = Arc::clone(&self.plan.occurrences[occurrence].semantic_path);
             source.include_chain = mapping.include_chain(occurrence);
         }
-        Some((source, old))
+        Some((source, old, at))
     }
 }
 
@@ -1335,6 +1337,7 @@ fn collect_bodies(
     codes: &mut Vec<Arc<BodyCodeIdentity>>,
     executor: &dm_exec::BuildExecutor,
     reuse: Option<&BodyReuse<'_>>,
+    previous_bodies: &mut Vec<Option<usize>>,
 ) -> Result<usize, Vec<Diagnostic>> {
     let started = std::time::Instant::now();
     let recipes: Vec<_> = syntax.body_recipes().collect();
@@ -1361,11 +1364,12 @@ fn collect_bodies(
             }
             // The previous body's path, when it is this body's (no new allocation for an unchanged body).
             let ast_path = match &reused_source {
-                Some((_, old)) if recipe.has_path(&old.ast_path) => Arc::clone(&old.ast_path),
+                Some((_, old, _)) if recipe.has_path(&old.ast_path) => Arc::clone(&old.ast_path),
                 _ => recipe.path(),
             };
+            let previous = reused_source.as_ref().map(|(_, _, at)| *at);
             let source = match reused_source {
-                Some((source, _)) => source,
+                Some((source, _, _)) => source,
                 None => mapping
                     .output(span.start)
                     .ok_or_else(|| vec![internal("procedure body has no source origin")])?,
@@ -1385,6 +1389,7 @@ fn collect_bodies(
                 .then(|| Arc::clone(current))
             });
             rows.push((
+                previous,
                 code,
                 setting,
                 BodyOccurrence {
@@ -1404,7 +1409,9 @@ fn collect_bodies(
     codes.reserve(rows.len());
     settings.reserve(rows.len());
     bodies.reserve(rows.len());
-    for (code, setting, body) in rows {
+    previous_bodies.reserve(rows.len());
+    for (previous, code, setting, body) in rows {
+        previous_bodies.push(previous);
         codes.push(code);
         settings.push(setting);
         bodies.push(body);

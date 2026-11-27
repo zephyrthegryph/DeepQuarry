@@ -5,6 +5,11 @@ const PROGRESS_INTERVAL: Duration = Duration::from_millis(250);
 
 pub(super) struct ParsedDeclarations {
     pub(super) syntax: DeclarationSyntax,
+    /// For each chunk: whether it and the chunk after it are the previous revision's two consecutive chunks, bound to the
+    /// same contributions, inside one span the expansion copied (with the bytes between them). Text read from the end of a
+    /// body in such a chunk up to the next chunk's first declaration is the previous revision's (`body_codes` reuses the
+    /// previous termination). Empty when nothing was carried.
+    pub(super) interior_chunks: Vec<bool>,
     pub(super) diagnostics: Vec<(usize, dm_syntax::Diagnostic)>,
     pub(super) adapted: crate::SharedAdaptedDeclarations,
     pub(super) allocation_ledger: crate::allocation_ledger::AllocationLedger,
@@ -556,6 +561,23 @@ pub(super) fn parse_declarations_with_state(
         adapted.symbol_catalog = Some(catalog);
     }
     drop(delta);
+    let interior_chunks: Vec<bool> = match (previous_chunks.as_deref(), expanded.carried.as_deref()) {
+        (Some(table), Some(carried)) if complete && !carried_chunks.is_empty() => {
+            let kept = |index: usize| {
+                carried_chunks[index].filter(|&old| Arc::ptr_eq(&current_contributions[index], &table.values[old]))
+            };
+            (0..chunks.len())
+                .map(|index| {
+                    let (Some(old), Some(next)) = (kept(index), (index + 1 < chunks.len()).then(|| kept(index + 1)).flatten()) else {
+                        return false;
+                    };
+                    let (start, (next_start, next_len)) = (chunks[index].0, chunks[index + 1]);
+                    next == old + 1 && carried.run_holding(start, next_start + next_len - start).is_some()
+                })
+                .collect()
+        }
+        _ => Vec::new(),
+    };
     if let (Some(state), Some(keys)) = (retained, retained_keys.as_ref()) {
         if complete {
             state.record_chunk_table(super::declaration_state::ChunkTable::new(
@@ -594,6 +616,7 @@ pub(super) fn parse_declarations_with_state(
     ));
     Ok(ParsedDeclarations {
         syntax: declaration_syntax,
+        interior_chunks,
         diagnostics,
         adapted,
         allocation_ledger: crate::allocation_ledger::AllocationLedger {

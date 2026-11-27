@@ -382,6 +382,7 @@ pub fn build_with_executor_and_semantic_state<P: SourceProvider>(
     let profile_stage = dm_profile::stage("frontend.declaration_parsing");
     let ParsedDeclarations {
         syntax,
+        interior_chunks,
         diagnostics: syntax_diagnostics,
         mut adapted,
         allocation_ledger,
@@ -658,6 +659,8 @@ pub fn build_with_executor_and_semantic_state<P: SourceProvider>(
     let mut bodies = Vec::new();
     let mut issued_settings = Vec::new();
     let mut body_codes = Vec::new();
+    // For each body: the previous revision's body it took its location from (`BodyReuse`).
+    let mut previous_bodies = Vec::new();
     let reused_bodies = collect_bodies(
         &syntax,
         &snapshot.tree,
@@ -668,6 +671,7 @@ pub fn build_with_executor_and_semantic_state<P: SourceProvider>(
         &mut body_codes,
         executor,
         body_reuse.as_ref(),
+        &mut previous_bodies,
     )?;
     if verify_enabled() && reused_bodies > 0 {
         let (mut full_bodies, mut full_settings, mut full_codes) = (Vec::new(), Vec::new(), Vec::new());
@@ -681,6 +685,7 @@ pub fn build_with_executor_and_semantic_state<P: SourceProvider>(
             &mut full_codes,
             executor,
             None,
+            &mut Vec::new(),
         )?;
         let same = full_bodies.len() == bodies.len()
             && full_bodies.iter().zip(&bodies).all(|(a, b)| {
@@ -743,19 +748,73 @@ pub fn build_with_executor_and_semantic_state<P: SourceProvider>(
     if let Some(request) = &declaration_request {
         request.publish_successful();
     }
-    let terminations = super::parallel::chunked_map(executor, &bodies, |_, part| {
+    // A body in an interior carried chunk (`ParsedDeclarations::interior_chunks`) whose previous body ended at the same
+    // place in the copied text has the previous body's termination: what follows its end up to the next chunk's first
+    // declaration, and the syntax there, are the previous revision's.
+    let previous_terminations: Vec<Option<dm_syntax::BodyTermination>> = match (origin_base, interior_chunks.is_empty()) {
+        (Some(base), false) if previous_bodies.len() == bodies.len() => {
+            let carried = expanded.carried.as_deref();
+            let mut out = Vec::with_capacity(bodies.len());
+            let mut body = 0usize;
+            for (chunk, count) in syntax.body_counts().enumerate() {
+                for _ in 0..count {
+                    let reused = (interior_chunks.get(chunk) == Some(&true))
+                        .then_some(())
+                        .and(previous_bodies.get(body).copied().flatten())
+                        .and_then(|at| {
+                            let (old, owner) = (base.bodies.get(at)?, base.issued_body_codes.get(at)?);
+                            let end = bodies[body].expanded_span.end;
+                            let run = carried?.run_holding(end, 0)?;
+                            (dm_preprocess::regions::CarriedText::previous_offset(run, end) == old.expanded_span.end)
+                                .then_some(owner.termination)
+                        });
+                    out.push(reused);
+                    body += 1;
+                }
+            }
+            if body == bodies.len() { out } else { Vec::new() }
+        }
+        _ => Vec::new(),
+    };
+    let reused_terminations = previous_terminations.iter().filter(|termination| termination.is_some()).count();
+    let terminations = super::parallel::chunked_map(executor, &bodies, |first, part| {
         Ok::<_, std::convert::Infallible>(
-            part.iter()
-                .map(|body| {
-                    dm_syntax::termination_after_with_context(
-                        &expanded.text,
-                        body.expanded_span.end,
-                        &|offset| syntax.declaration_header_at(offset),
-                    )
+            (first..)
+                .zip(part)
+                .map(|(index, body)| {
+                    previous_terminations.get(index).copied().flatten().unwrap_or_else(|| {
+                        dm_syntax::termination_after_with_context(
+                            &expanded.text,
+                            body.expanded_span.end,
+                            &|offset| syntax.declaration_header_at(offset),
+                        )
+                    })
                 })
                 .collect(),
         )
     });
+    if verify_enabled() && reused_terminations > 0 {
+        let mismatch = previous_terminations.iter().zip(bodies.iter()).position(|(reused, body)| {
+            reused.is_some_and(|reused| {
+                reused
+                    != dm_syntax::termination_after_with_context(&expanded.text, body.expanded_span.end, &|offset| {
+                        syntax.declaration_header_at(offset)
+                    })
+            })
+        });
+        crate::change_set::record_outcome(match mismatch {
+            None => format!("frontend verify: {reused_terminations} reused body terminations equal the lexed ones"),
+            Some(index) => {
+                eprintln!("frontend verify: TERMINATION MISMATCH at body {index}");
+                format!("frontend verify: TERMINATION MISMATCH at body {index}")
+            }
+        });
+    }
+    timings.reused_terminations = reused_terminations;
+    crate::change_set::record_outcome(format!(
+        "frontend body terminations: {reused_terminations} of {} reused",
+        bodies.len()
+    ));
     let terminations = match terminations {
         Ok(terminations) => terminations,
         Err(never) => match never {},

@@ -230,12 +230,14 @@ fn reused_origins_through_edits(stride: u64) {
     ];
     let mut reused = 0;
     let mut carried = 0;
+    let mut terminations = 0;
     for (revision, (a, b, changed)) in steps.into_iter().enumerate() {
         files = Files { a, b };
         let revision = (revision as u64 + 2) * stride;
         let incremental = build_revised(Some((&mut state, &memo)), &files, revision, &changed);
         reused += incremental.timings.reused_origins;
         carried += incremental.timings.declaration_reuse.carried_chunks;
+        terminations += incremental.timings.reused_terminations;
         let cold = build_revised(None, &files, revision, &[]);
         same_origins(&incremental, &cold);
         same_declarations(&incremental, &cold);
@@ -245,4 +247,6 @@ fn reused_origins_through_edits(stride: u64) {
     // Chunks the expansion copied took their key and contribution from the previous request's chunk table (the patch
     // path; the adoption path re-expands through the ordered pass but still copies unchanged regions).
     assert!(carried > 0, "no chunk was carried");
+    // Bodies inside interior carried chunks kept their previous termination (and `same_declarations` compared them).
+    assert!(terminations > 0, "no body termination was reused");
 }
