@@ -362,8 +362,9 @@ fn gen_memo_store(tree: &crate::tree::Tree, root: &Path, results: &[super::gen::
 /// The generated files the `.dme` includes (`_generated/` directories) exist before the model is built: a fresh worktree has none, and
 /// the compiler's front end refuses a missing include. An empty file is what the generators then overwrite (they are gitignored build
 /// output, never committed).
-fn ensure_generated_includes(root: &Path) {
-    let Ok(entries) = std::fs::read_dir(root) else { return };
+fn ensure_generated_includes(root: &Path) -> Vec<std::path::PathBuf> {
+    let mut created = Vec::new();
+    let Ok(entries) = std::fs::read_dir(root) else { return created };
     for entry in entries.flatten() {
         let path = entry.path();
         if path.extension().and_then(|e| e.to_str()) != Some("dme") {
@@ -381,17 +382,19 @@ fn ensure_generated_includes(root: &Path) {
                 if let Some(dir) = file.parent() {
                     let _ = std::fs::create_dir_all(dir);
                 }
-                let _ = std::fs::write(&file, "");
+                if std::fs::write(&file, "").is_ok() {
+                    created.push(file);
+                }
             }
         }
     }
+    created
 }
 
 pub fn gen(args: &[String], root: &Path) -> ExitCode {
     super::incremental::disable_capture();
-    if !args.iter().any(|a| a == "--check") {
-        ensure_generated_includes(root);
-    }
+    let stubs = if args.iter().any(|a| a == "--check") { Vec::new() } else { ensure_generated_includes(root) };
+    super::set_bootstrap_stubs(stubs);
     let check = args.iter().any(|a| a == "--check");
     let names: Vec<String> = args.iter().filter(|a| !a.starts_with("--")).cloned().collect();
     let trace = dq_hostio::var("DQ_ANALYZE_TRACE").is_ok();

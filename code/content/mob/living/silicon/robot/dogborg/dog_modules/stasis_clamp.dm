@@ -11,7 +11,7 @@
 
 	if(istype(A, /obj/machinery/clamp))
 		to_chat(user, span_notice("You dissipate \the [A]."))
-		qdel(A)
+		dissolved(A, user)
 		return
 
 	if(!istype(A, /obj/machinery/atmospherics/pipe/simple))
