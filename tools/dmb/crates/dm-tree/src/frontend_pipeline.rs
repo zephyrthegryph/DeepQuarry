@@ -450,11 +450,27 @@ pub fn build_with_executor_and_semantic_state<P: SourceProvider>(
     let profile_stage = dm_profile::stage("frontend.declaration_origins");
     let provenance_start = Instant::now();
     let expanded_spans: Vec<_> = adapted.origins.iter().map(|origin| origin.span).collect();
-    // Hash each original region once, not once for every declaration in it.
+    // What the previous revision's origins can be reused for: its files are this revision's at the same ids (the source
+    // index was reused) and the plan says which regions are verbatim copies of which previous ones.
+    // A rebuilt index (the ordered pass adopted subtrees instead of patching) still qualifies when it numbers the same files
+    // the same way.
+    let origin_base = previous.as_ref().filter(|previous| {
+        plan_reuse.regions.len() == plan.regions.len()
+            && (source_index_reused
+                || (previous.files.len() == files.len()
+                    && previous.files.iter().zip(files.iter()).all(|(was, now)| {
+                        Arc::ptr_eq(&was.path, &now.path) || was.path == now.path
+                    })))
+    });
+    // Hash each original region once, not once for every declaration in it; a copied region's hash is the previous one.
     let region_hashes: Vec<_> = plan
         .regions
         .iter()
-        .map(|region| {
+        .enumerate()
+        .map(|(index, region)| {
+            if let Some(hash) = origin_base.and_then(|base| plan_reuse.regions[index].and_then(|old| base.region_hashes.get(old))) {
+                return Ok(*hash);
+            }
             let path = plan.occurrences[region.occurrence].path.as_ref();
             let file = by_path
                 .get(path)
@@ -467,12 +483,35 @@ pub fn build_with_executor_and_semantic_state<P: SourceProvider>(
         .collect::<Result<Vec<_>, Vec<Diagnostic>>>()?;
     timings.phase("region_hashes", provenance_start);
     let origins_started = Instant::now();
+    // A declaration in a copied region has the previous revision's origin (same file, span, region text and macro
+    // trace) with this plan's occurrence; only the others are looked up.
+    let reused_origins = origin_base.and_then(|base| {
+        let starts: Vec<usize> = expanded_spans.iter().map(|span| span.start as usize).collect();
+        super::origin_reuse::plan(base, &plan_reuse.regions, &expanded.receipts, &starts)
+    });
+    let reused_count = reused_origins.as_ref().map_or(0, |rows| rows.iter().filter(|row| row.is_some()).count());
     // Every declaration's origin, in parallel chunks (each with its own lookup hints), joined in declaration order.
     let parts = mapping.parts();
-    let origin_rows = super::parallel::chunked_map(executor, &expanded_spans, |_, spans| {
+    let indices: Vec<usize> = (0..expanded_spans.len()).collect();
+    let origin_rows = super::parallel::chunked_map(executor, &indices, |_, part| {
     let mapping = parts.mapping();
-    let mut rows = Vec::with_capacity(spans.len());
-    for origin_span in spans {
+    let mut rows = Vec::with_capacity(part.len());
+    for &index in part {
+        if let Some((region, old)) = reused_origins.as_ref().and_then(|rows| rows[index]) {
+            let base = origin_base.expect("reused origins have a base");
+            let mut provenance = base
+                .snapshot
+                .occurrences
+                .get(OccurrenceId(old))
+                .ok_or_else(|| vec![internal("reused origin has no previous occurrence")])?
+                .provenance
+                .clone();
+            provenance.include_occurrence = u32::try_from(plan.regions[region].occurrence)
+                .map_err(|_| vec![internal("too many include occurrences")])?;
+            rows.push((region, provenance));
+            continue;
+        }
+        let origin_span = &expanded_spans[index];
         let expanded_origin = mapping
             .origin(origin_span.start as usize)
             .ok_or_else(|| vec![internal("declaration has no current expansion origin")])?;
@@ -500,6 +539,33 @@ pub fn build_with_executor_and_semantic_state<P: SourceProvider>(
     Ok::<_, Vec<Diagnostic>>(rows)
     })?;
     let (declaration_regions, current_origins): (Vec<_>, Vec<_>) = origin_rows.into_iter().unzip();
+    if verify_enabled() && reused_count > 0 {
+        // The full lookup for every declaration: a reused origin must equal it.
+        let full = mapping.parts().mapping();
+        let mismatch = expanded_spans.iter().zip(&current_origins).zip(&declaration_regions).position(|((span, reused), region)| {
+            full.origin(span.start as usize).is_none_or(|origin| {
+                origin.region != *region
+                    || full.file_of(origin.origin.path).is_none_or(|file| {
+                        source_span(file, origin.source_span).ok() != Some(reused.span)
+                            || full.expansion_stack(origin.macro_expansions).ok().as_ref() != Some(&reused.expansion_stack)
+                    })
+                    || reused.region != region_hashes[origin.region]
+                    || reused.include_occurrence as usize != plan.regions[origin.region].occurrence
+            })
+        });
+        match mismatch {
+            None => crate::change_set::record_outcome(format!("frontend verify: {reused_count} reused origins equal the full lookup")),
+            Some(index) => {
+                eprintln!("frontend verify: ORIGIN MISMATCH at declaration {index}");
+                crate::change_set::record_outcome(format!("frontend verify: ORIGIN MISMATCH at declaration {index}"));
+            }
+        }
+    }
+    timings.reused_origins = reused_count;
+    crate::change_set::record_outcome(format!(
+        "frontend origins: {reused_count} of {} reused from the previous revision",
+        current_origins.len()
+    ));
     adapted.origins = current_origins.into();
     timings.phase("origins", origins_started);
     timings.provenance_and_body_indexing += provenance_start.elapsed();
@@ -562,36 +628,68 @@ pub fn build_with_executor_and_semantic_state<P: SourceProvider>(
     );
     let profile_stage = dm_profile::stage("frontend.body_indexing");
     let provenance_start = Instant::now();
-    let declarations_by_start: HashMap<_, _> = expanded_spans
-        .iter()
-        .enumerate()
-        .filter_map(|(index, span)| match snapshot.tree.declarations()[index] {
-            Target::Member(member)
-                if matches!(
-                    snapshot.tree.member(member)?.kind,
-                    MemberKind::Proc | MemberKind::Verb
-                ) =>
-            {
-                Some((span.start as usize, (OccurrenceId(index as u32), member)))
-            }
-            _ => None,
-        })
-        .collect();
+    // Declaration starts in output order: a body finds its declaration by binary search (`collect_bodies`).
+    let mut declaration_starts_now: Vec<(usize, usize)> =
+        expanded_spans.iter().enumerate().map(|(index, span)| (span.start as usize, index)).collect();
+    // Almost always already in order; a stable sort keeps declarations that start together in index order.
+    if declaration_starts_now.windows(2).any(|pair| pair[0].0 > pair[1].0) {
+        declaration_starts_now.sort_by_key(|&(start, _)| start);
+    }
+    // The previous revision's bodies stand for the bodies of declarations whose origin was reused, when the tree is the
+    // previous one (member ids are the same).
+    let body_reuse = match (origin_base, reused_origins.as_ref()) {
+        (Some(base), Some(origins)) if Arc::ptr_eq(&base.snapshot.tree, &snapshot.tree) => {
+            Some(BodyReuse { base, origins, plan: &plan })
+        }
+        _ => None,
+    };
     timings.phase("body_starts", provenance_start);
     let collect_started = Instant::now();
     let mut bodies = Vec::new();
     let mut issued_settings = Vec::new();
     let mut body_codes = Vec::new();
-    collect_bodies(
+    let reused_bodies = collect_bodies(
         &syntax,
         &snapshot.tree,
-        &declarations_by_start,
+        &declaration_starts_now,
         &mapping,
         &mut bodies,
         &mut issued_settings,
         &mut body_codes,
         executor,
+        body_reuse.as_ref(),
     )?;
+    if verify_enabled() && reused_bodies > 0 {
+        let (mut full_bodies, mut full_settings, mut full_codes) = (Vec::new(), Vec::new(), Vec::new());
+        collect_bodies(
+            &syntax,
+            &snapshot.tree,
+            &declaration_starts_now,
+            &mapping,
+            &mut full_bodies,
+            &mut full_settings,
+            &mut full_codes,
+            executor,
+            None,
+        )?;
+        let same = full_bodies.len() == bodies.len()
+            && full_bodies.iter().zip(&bodies).all(|(a, b)| {
+                a.declaration == b.declaration
+                    && a.member == b.member
+                    && a.expanded_span == b.expanded_span
+                    && a.source == b.source
+                    && a.setting_context_origins == b.setting_context_origins
+            })
+            && full_settings.iter().zip(&issued_settings).all(|(a, b)| a == b);
+        let line = if same {
+            format!("frontend verify: {reused_bodies} reused bodies equal the full indexing")
+        } else {
+            eprintln!("frontend verify: BODY MISMATCH");
+            "frontend verify: BODY MISMATCH".to_string()
+        };
+        crate::change_set::record_outcome(line);
+    }
+    crate::change_set::record_outcome(format!("frontend bodies: {reused_bodies} of {} reused", bodies.len()));
     timings.phase("collect_bodies", collect_started);
     let roster_started = Instant::now();
     let callable_roster = match semantic_state.as_deref_mut() {
@@ -686,8 +784,11 @@ pub fn build_with_executor_and_semantic_state<P: SourceProvider>(
         timings.total.as_secs_f64()
     ));
     let declaration_regions: Arc<[u32]> = declaration_regions.iter().map(|&region| region as u32).collect();
+    let declaration_starts: Arc<[u32]> = expanded_spans.iter().map(|span| span.start).collect();
     let mut frontend = ColdFrontend {
         declaration_regions,
+        declaration_starts,
+        region_hashes: region_hashes.into(),
         revision: 0,
         delta: None,
         source_export_mapping,

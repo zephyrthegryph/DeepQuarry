@@ -1504,6 +1504,9 @@ mod tests {
 /// The daemon's shared state, for analysis requests that take their front end from a compile session (`hosted_frontend`).
 static HOSTED: std::sync::OnceLock<Arc<Shared>> = std::sync::OnceLock::new();
 
+/// A cold hosted front end takes every core when at least this much RAM is free (it peaks at a few GB above an edit's).
+const COLD_WIDE_FREE_BYTES: u64 = 16 << 30;
+
 /// `DQ_FRONTEND_TRACE=1` in an analysis request's environment: print the hosted front end's phases to its stderr.
 fn frontend_trace() -> bool {
     matches!(dq_hostio::var("DQ_FRONTEND_TRACE").as_deref(), Ok("1"))
@@ -1585,8 +1588,17 @@ pub(crate) fn hosted_frontend(
             }
         }
         trace_refresh("building");
-        let workers = std::thread::available_parallelism().map(|n| n.get()).unwrap_or(4).min(shared.max_workers.max(1));
+        let cores = std::thread::available_parallelism().map(|n| n.get()).unwrap_or(4);
+        let workers = cores.min(shared.max_workers.max(1));
+        // A cold front end (nothing remembered for this define set) parses every declaration chunk and expands every region:
+        // it takes every core when the machine has the memory to spare, on an executor of its own (the daemon's shared pool
+        // holds at most `DMB_DAEMON_MAX_WORKERS` threads for every request together). An edit uses the shared pool.
+        let cold = host.semantic_state().and_then(|state| state.previous_frontend(&project, defines)).is_none();
+        let wide = (cold && cores > workers && available_memory().is_some_and(|free| free >= COLD_WIDE_FREE_BYTES))
+            .then(|| dm_exec::BuildExecutor::new(cores).ok())
+            .flatten();
         let (memo, execution, semantic) = host.execution(workers, None).map_err(|e| e.to_string())?;
+        let workers = wide.as_ref().map_or(workers, |executor| executor.workers());
         let mut one_shot = dm_tree::frontend::RetainedSemanticTree::one_shot();
         let retained = semantic.is_some();
         let semantic = match semantic {
@@ -1594,19 +1606,21 @@ pub(crate) fn hosted_frontend(
             None => &mut one_shot,
         };
         let declarations = semantic.begin_declaration_request(retained);
-        let built = execution
-            .run(|executor| {
-                dm_tree::frontend::build_with_executor_and_semantic_state(
-                    &project,
-                    &sources.provider(),
-                    defines,
-                    dm_tree::frontend::FrontendConfig { workers, engine: Some(engine.frontend_seed()), observer: None },
-                    memo.as_ref().map(|memo| memo as &dyn dm_preprocess::regions::ExpansionMemo),
-                    executor,
-                    Some(&mut *semantic),
-                )
-            })
-            .map_err(|e| format!("{e:?}"))?
+        let build = |executor: &dm_exec::BuildExecutor, semantic: &mut dm_tree::frontend::RetainedSemanticTree| {
+            dm_tree::frontend::build_with_executor_and_semantic_state(
+                &project,
+                &sources.provider(),
+                defines,
+                dm_tree::frontend::FrontendConfig { workers, engine: Some(engine.frontend_seed()), observer: None },
+                memo.as_ref().map(|memo| memo as &dyn dm_preprocess::regions::ExpansionMemo),
+                executor,
+                Some(semantic),
+            )
+        };
+        let built = match &wide {
+            Some(executor) => build(executor, &mut *semantic),
+            None => execution.run(|executor| build(executor, &mut *semantic)).map_err(|e| format!("{e:?}"))?,
+        }
             .map_err(|d| format!("front end failed: {} diagnostic(s), first: {:?}", d.len(), d.first().map(|x| &x.message)))?;
         let revision = dm_tree::frontend::FrontendRevision::new(built);
         if retained {
@@ -1626,7 +1640,7 @@ pub(crate) fn hosted_frontend(
             dq_hostio::out(
                 false,
                 format_args!(
-                    "dmbd analyze: front end {:.3}s (waited {:.3}s for the session, retained={retained})",
+                    "dmbd analyze: front end {:.3}s (waited {:.3}s for the session, retained={retained}, workers={workers})",
                     started.elapsed().as_secs_f64(),
                     waited.as_secs_f64()
                 ),

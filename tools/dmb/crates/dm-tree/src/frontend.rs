@@ -8,6 +8,8 @@ mod callable_roster;
 mod parallel;
 #[path = "frontend_delta.rs"]
 mod delta;
+#[path = "frontend_origin_reuse.rs"]
+mod origin_reuse;
 pub use delta::{Change, DeclarationKey, FrontendDelta};
 #[cfg(test)]
 #[path = "frontend_delta_tests.rs"]
@@ -121,6 +123,8 @@ pub struct FrontendTimings {
     /// Every step of the build in order, each with its own wall time (the stages above group several of them). The daemon
     /// and `dmbc analyze` print it (`phase_summary`) so a request shows which tree-wide step an edit still pays for.
     pub phases: Vec<(&'static str, Duration)>,
+    /// Declarations whose origin was taken from the previous revision (`frontend_origin_reuse.rs`).
+    pub reused_origins: usize,
 }
 impl FrontendTimings {
     pub(crate) fn phase(&mut self, name: &'static str, started: Instant) {
@@ -259,8 +263,12 @@ pub struct ColdFrontend {
     /// or reorders origins independently from their declaration targets.
     pub emission_order: Arc<[OccurrenceId]>,
     source_export_mapping: Arc<source_export_mapping::SourceExportMapping>,
-    /// The plan region of every declaration (by declaration index), for the delta of the next revision.
+    /// The plan region of every declaration (by declaration index), for the delta and the origin reuse of the next revision.
     declaration_regions: Arc<[u32]>,
+    /// The expanded offset every declaration starts at, for the origin reuse of the next revision.
+    declaration_starts: Arc<[u32]>,
+    /// The source text hash of every plan region (`Provenance::region`).
+    region_hashes: Arc<[u128]>,
     /// This revision's number in its session (`RetainedSemanticTree`), 0 for a one-shot build.
     pub revision: u64,
     /// What changed against the revision this one was built from; `None` when it was built without one (or its plan
@@ -1217,19 +1225,70 @@ fn resolution_error(
 mod resolution_messages;
 use resolution_messages::{authored_ancestry, plain_datum_owner, resolution_message};
 
+/// What `collect_bodies` may take from the previous revision: its bodies, for the declarations whose origin was reused
+/// (`origins[index] = (region, previous declaration)`), when the tree is the previous one.
+struct BodyReuse<'a> {
+    base: &'a ColdFrontend,
+    origins: &'a [Option<(usize, u32)>],
+    plan: &'a DirectivePlan,
+}
+impl BodyReuse<'_> {
+    /// The source location of declaration `index`'s body, from the previous revision's body of the same declaration, with
+    /// this plan's place: when the member and the body length are the same.
+    fn source(&self, index: usize, member: MemberId, span: dm_syntax::Span, mapping: &Mapping<'_>) -> Option<SourceLocation> {
+        let (region, previous) = (*self.origins.get(index)?)?;
+        let at = *self.base.body_by_declaration.get(&OccurrenceId(previous))?;
+        let old = self.base.bodies.get(at)?;
+        if old.member != member || old.expanded_span.end - old.expanded_span.start != span.end - span.start {
+            return None;
+        }
+        let region_now = self.plan.regions.get(region)?;
+        let occurrence = region_now.occurrence;
+        let mut source = old.source.clone();
+        source.encounter_ordinal = region_now.encounter_ordinal;
+        if source.include_occurrence != occurrence {
+            source.include_occurrence = occurrence;
+            source.path = Arc::clone(&self.plan.occurrences[occurrence].path);
+            source.semantic_path = Arc::clone(&self.plan.occurrences[occurrence].semantic_path);
+            source.include_chain = mapping.include_chain(occurrence);
+        }
+        Some(source)
+    }
+}
+
+/// The declaration whose expanded span starts at `start` and is a proc or verb (the last such one, by index, when several
+/// start there), by binary search over `(start, declaration)` sorted by start and then index.
+fn body_declaration(tree: &crate::SemanticTree, starts: &[(usize, usize)], start: usize) -> Option<(OccurrenceId, MemberId)> {
+    let first = starts.partition_point(|&(at, _)| at < start);
+    let mut found = None;
+    for &(at, index) in &starts[first..] {
+        if at != start {
+            break;
+        }
+        if let Target::Member(member) = tree.declarations()[index] {
+            if tree.member(member).is_some_and(|node| matches!(node.kind, MemberKind::Proc | MemberKind::Verb)) {
+                found = Some((OccurrenceId(index as u32), member));
+            }
+        }
+    }
+    found
+}
+
 #[allow(clippy::too_many_arguments)]
 fn collect_bodies(
     syntax: &DeclarationSyntax,
     tree: &crate::SemanticTree,
-    declarations: &HashMap<usize, (OccurrenceId, MemberId)>,
+    starts: &[(usize, usize)],
     mapping: &Mapping<'_>,
     bodies: &mut Vec<BodyOccurrence>,
     settings: &mut Vec<Option<Arc<dm_ir::ProcedureMetadata>>>,
     codes: &mut Vec<Arc<BodyCodeIdentity>>,
     executor: &dm_exec::BuildExecutor,
-) -> Result<(), Vec<Diagnostic>> {
+    reuse: Option<&BodyReuse<'_>>,
+) -> Result<usize, Vec<Diagnostic>> {
     let recipes: Vec<_> = syntax.body_recipes().collect();
     let parts = mapping.parts();
+    let reused = std::sync::atomic::AtomicUsize::new(0);
     // Every body in parallel chunks (each with its own lookup hints), joined in body order.
     let rows = parallel::chunked_map(executor, &recipes, |_, part| {
         let mapping = parts.mapping();
@@ -1237,13 +1296,23 @@ fn collect_bodies(
         for recipe in part {
             let code = recipe.code_identity();
             let span = recipe.span();
-            let declaration = declarations
-                .get(&span.start)
-                .copied()
+            let declaration = body_declaration(tree, starts, span.start)
                 .ok_or_else(|| vec![internal("procedure body has no resolved declaration")])?;
-            let source = mapping
-                .output(span.start)
-                .ok_or_else(|| vec![internal("procedure body has no source origin")])?;
+            // A body without setting origins in a reused declaration takes its source location from the previous body.
+            let reused_source = if recipe.settings().next().is_none() {
+                reuse.and_then(|reuse| reuse.source(declaration.0 .0 as usize, declaration.1, span, &mapping))
+            } else {
+                None
+            };
+            if reused_source.is_some() {
+                reused.fetch_add(1, std::sync::atomic::Ordering::Relaxed);
+            }
+            let source = match reused_source {
+                Some(source) => source,
+                None => mapping
+                    .output(span.start)
+                    .ok_or_else(|| vec![internal("procedure body has no source origin")])?,
+            };
             let setting_context_origins = recipe
                 .settings()
                 .map(|span| {
@@ -1282,7 +1351,7 @@ fn collect_bodies(
         settings.push(setting);
         bodies.push(body);
     }
-    Ok(())
+    Ok(reused.into_inner())
 }
 
 #[cfg(test)]

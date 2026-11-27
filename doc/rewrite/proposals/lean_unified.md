@@ -335,3 +335,11 @@ comparison and the delta.
 For the ENGINE workstream: the analysis model memo (`daemon/analysis_model.rs`) still reads and hashes every model file on every
 request (`same_inputs`) before the front end runs; the watched provider's token (`WatchedSources::token`) answers "did any source
 change" without reading them.
+
+Round 2 (lane `compiler/frontend-edit-floor-2`): copied regions reuse their declarations' origins and bodies' locations, the
+authored lease inherits the previous request's claims (no replay of 25k owners on a body edit, only changed owners after a
+declaration edit), and a cold hosted front end uses every core. Quietest runs: body edit front end 0.21-0.25 s (was 0.45),
+`#define SECONDS` 10.1 s (was 14.7), cold 15.4 s; new var 2.0 s and new proc 2.2 s are bound by the dense-id tree splice, which
+needs the stable-id decision (retained_frontend.md, round 2). Proof: hosted against cold dreamchecker and check outputs identical over
+the edit sequence, compile byte-identical (equivalent for a new var), analysis-parity 100 %, ratchets pass. The published
+`dmb-bin/dmbc.exe` at the bin root is a stale October binary; builds use `dmb-bin/v/<current>`, which matches master.
