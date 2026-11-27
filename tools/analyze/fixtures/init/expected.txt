@@ -9,10 +9,16 @@ init_lines	code/modules/init/splitlines.dm	3
 init_lines	code/modules/init/splitlines.dm	4
 init_lines	code/modules/init/splitlines.dm	5
 init_lines	code/modules/init/splitlines.dm	6
+init_lines	code/modules/init/splitlines.dm	7
 init_lines	code/modules/init/splitlines.dm	8
 init_lines	code/modules/init/splitlines.dm	9
 init_lines	code/modules/init/splitlines.dm	10
-init_lines	code/modules/init/splitlines.dm	11
+init_lines	code/modules/init/splitlines.dm	12
+init_lines	code/modules/init/splitlines.dm	13
+init_lines	code/modules/init/splitlines.dm	14
+init_lines	code/modules/init/splitlines.dm	16
+init_lines	code/modules/init/splitlines.dm	17
+init_lines	code/modules/init/splitlines.dm	19
 init_lines	code/modules/init/table.dm	49
 init_lines	code/modules/init/turf.dm	9
 init_lines	code/modules/init/world.dm	2
@@ -41,8 +47,8 @@ init_lines	code/modules/init/world.dm	28
 init_lines	code/modules/init/world.dm	33
 init_lines	code/modules/init/world.dm	40
 init_lines	code/modules/sub/unit_tests/t.dm	2
-init_lines	code/world/tgs/x.dm	2
 init_lines	code/modules/unit_tests_other/t.dm	2
+init_lines	code/world/tgs/x.dm	2
 init_lines	maps/m.dm	5
 initialize	code/modules/init/a.dm	16
 initialize	code/modules/init/a.dm	18
@@ -61,8 +67,6 @@ late_initialize	code/modules/init/table.dm	5
 late_initialize	code/modules/init/table.dm	41
 late_initialize	code/modules/init/world.dm	36
 late_initialize	code/modules/init/world.dm	41
-table_init_overrides	code/tests/benchmarks/b.dm	3
-table_init_overrides	code/tests/benchmarks/b.dm	4
 table_init_overrides	code/modules/init/.hid/h.dm	1
 table_init_overrides	code/modules/init/sp ace/s.dm	3
 table_init_overrides	code/modules/init/table.dm	4
@@ -74,6 +78,8 @@ table_init_overrides	code/modules/init/table.dm	40
 table_init_overrides	code/modules/init/table.dm	41
 table_init_overrides	code/modules/init/table.dm	47
 table_init_overrides	code/modules/init/table.dm	48
+table_init_overrides	code/tests/benchmarks/b.dm	3
+table_init_overrides	code/tests/benchmarks/b.dm	4
 table_init_overrides	code/tests/unit_tests/u.dm	3
 table_init_overrides	code/tests/unit_tests/u.dm	9
 table_init_overrides	maps/m.dm	3
@@ -91,11 +97,12 @@ world_reads	code/modules/init/.hid/h.dm	4
 world_reads	code/modules/init/crlf.dm	2
 world_reads	code/modules/init/crlf.dm	3
 world_reads	code/modules/init/sp ace/s.dm	2
-world_reads	code/modules/init/splitlines.dm	2
-world_reads	code/modules/init/splitlines.dm	5
-world_reads	code/modules/init/splitlines.dm	6
-world_reads	code/modules/init/splitlines.dm	9
-world_reads	code/modules/init/splitlines.dm	11
+world_reads	code/modules/init/splitlines.dm	3
+world_reads	code/modules/init/splitlines.dm	8
+world_reads	code/modules/init/splitlines.dm	10
+world_reads	code/modules/init/splitlines.dm	13
+world_reads	code/modules/init/splitlines.dm	17
+world_reads	code/modules/init/splitlines.dm	19
 world_reads	code/modules/init/turf.dm	9
 world_reads	code/modules/init/world.dm	2
 world_reads	code/modules/init/world.dm	3
@@ -113,6 +120,6 @@ world_reads	code/modules/init/world.dm	28
 world_reads	code/modules/init/world.dm	33
 world_reads	code/modules/init/world.dm	40
 world_reads	code/modules/sub/unit_tests/t.dm	2
-world_reads	code/world/tgs/x.dm	2
 world_reads	code/modules/unit_tests_other/t.dm	2
+world_reads	code/world/tgs/x.dm	2
 world_reads	maps/m.dm	5

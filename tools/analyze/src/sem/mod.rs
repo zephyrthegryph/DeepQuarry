@@ -94,6 +94,9 @@ pub fn register_frontend_provider(provider: FrontendProvider) {
 }
 
 fn provided_frontend(dme: &Path) -> Result<dm_tree::frontend::FrontendRevision, String> {
+    // The crate's own unit tests have no dmbc process to register one: they use dmbc's front end directly (a dev-dependency).
+    #[cfg(test)]
+    register_frontend_provider(dmbc::analysis_frontend::frontend);
     let provider = FRONTEND_PROVIDER.get().ok_or("the semantic model needs the compiler's front end: run it as `dmbc analyze`")?;
     let started = std::time::Instant::now();
     let rev = provider(dme);

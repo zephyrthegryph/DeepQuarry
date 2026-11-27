@@ -15,7 +15,7 @@ const SOURCE: &str = "/datum/look
 \tvar/list/items
 \tvar/glow = 0
 \tvar/hue = 1
-/obj/thing/draw(datum/look/look)
+/obj/thing/proc/draw(datum/look/look)
 \tlook.state(\"x[items]-[glow]\")
 /obj/thing/proc/put(x)
 \titems += x
@@ -42,6 +42,10 @@ fn make_tree(base: &Path, name: &str, repo: &Path) -> PathBuf {
     let tree = base.join(name);
     std::fs::create_dir_all(tree.join("code")).unwrap();
     std::fs::write(tree.join("code/a.dm"), SOURCE).unwrap();
+    // The macros the generated files use (the real tree defines them): the compiler's front end refuses a tree that spells
+    // `GLOBAL_LIST_INIT(x, list(/a = 1))` as a proc header.
+    std::fs::create_dir_all(tree.join("code/__defines")).unwrap();
+    std::fs::write(tree.join("code/__defines/macros.dm"), "#define GLOBAL_LIST_INIT(X, V) var/global/list/X = V\n").unwrap();
     std::fs::create_dir_all(tree.join("tools/ci")).unwrap();
     std::fs::copy(repo.join("tools/ci/lint_scopes.toml"), tree.join("tools/ci/lint_scopes.toml")).unwrap();
     tree

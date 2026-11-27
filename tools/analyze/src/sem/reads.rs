@@ -2674,10 +2674,16 @@ mod global_accessor_tests {
         let engine = "#define READ_LOOKUP(P, A...)\n#define READS_FROM(A)\n#define TRACKED(T,V)\n#define TRACKED_DATA(T,V)\n#define CAPABILITIES(T) T/proc/__entries()\n#define ref_one(A...) return\n#define STAT(T,K,A...)\n#define READS_AS(P,K,A...)\n/datum/lookup_grid\n\tvar/load = 0\n\tvar/raw = 0\nTRACKED(/datum/lookup_grid, load)\nREAD_LOOKUP(/proc/lookup_grid, registry = GLOBAL_PROC_REF(lookup_registry), key = GLOBAL_PROC_REF(lookup_identity), argument = 1, result = /datum/lookup_grid)\n/proc/lookup_registry()\n\treturn null\n/proc/lookup_identity(id)\n\treturn id\n/proc/lookup_grid(id)\n\treturn null\n/datum/act/eval\n\tvar/datum/lookup_probe/actor\n";
         let library = "/proc/lookup_load(id)\n\tREADS_FROM(id)\n\tvar/datum/lookup_grid/G = lookup_grid(id)\n\treturn G.load\n/proc/opaque_region()\n\tREADS_FROM()\n\treturn 1\n";
         let content = "/datum/lookup_probe\n\tvar/region = 1\n\tvar/other_region = 2\nTRACKED(/datum/lookup_probe, region)\nTRACKED(/datum/lookup_probe, other_region)\n/datum/lookup_profile\n\tvar/region = 3\nTRACKED_DATA(/datum/lookup_profile, region)\n/datum/lookup_probe\n\tvar/datum/lookup_profile/profile\nTRACKED(/datum/lookup_probe, profile)\nCAPABILITIES(/datum/lookup_probe)\n\tref_one(nameof(profile))\nSTAT(/datum/lookup_probe, virtual_region, SUM)\n/datum/lookup_probe/proc/derive_alias_region()\n\treturn region\n/datum/lookup_probe/proc/profile_alias()\n\treturn profile.region\nREADS_AS(/datum/lookup_probe/proc/profile_alias, region, via = nameof(profile))\n/datum/lookup_probe/proc/direct()\n\tvar/datum/lookup_grid/G = lookup_grid(region)\n\treturn G.load\n/datum/lookup_probe/proc/wrapped()\n\treturn lookup_load(region)\n/datum/lookup_probe/proc/two()\n\treturn lookup_load(region) + lookup_load(other_region)\n/datum/lookup_probe/proc/literal()\n\treturn lookup_load(-5)\n/datum/lookup_probe/proc/contextual(datum/act/eval/A)\n\treturn lookup_load(A.actor.region)\n/datum/lookup_probe/proc/profile_leaf()\n\treturn lookup_load(profile.region)\n/datum/lookup_probe/proc/virtual_arg()\n\treturn lookup_load(virtual_region)\n/datum/lookup_probe/proc/derived_arg()\n\treturn lookup_load(alias_region)\n/datum/lookup_probe/proc/profile_alias_arg()\n\treturn lookup_load(profile_alias())\n/datum/lookup_probe/proc/opaque()\n\treturn lookup_load(opaque_region())\n/datum/lookup_probe/proc/untracked()\n\tvar/datum/lookup_grid/G = lookup_grid(region)\n\treturn G.raw\n";
+        // The macros in a defines file: the model includes the files in path order, and the content uses them (the compiler's front
+        // end refuses `TRACKED(/datum/x, v)` read as a proc header, as BYOND does).
+        let split = engine.find("/datum/").unwrap();
+        let (macros, engine) = engine.split_at(split);
+        std::fs::create_dir_all(root.join("code/__defines")).unwrap();
+        std::fs::write(root.join("code/__defines/probe.dm"), macros).unwrap();
         std::fs::write(root.join("code/engine/probe.dm"), engine).unwrap();
         std::fs::write(root.join("code/library/probe.dm"), library).unwrap();
         std::fs::write(root.join("code/content/probe.dm"), content).unwrap();
-        let mut tree = Tree::from_files(vec![SourceFile::from_text("code/engine/probe.dm", engine), SourceFile::from_text("code/library/probe.dm", library), SourceFile::from_text("code/content/probe.dm", content)]);
+        let mut tree = Tree::from_files(vec![SourceFile::from_text("code/__defines/probe.dm", macros), SourceFile::from_text("code/engine/probe.dm", engine), SourceFile::from_text("code/library/probe.dm", library), SourceFile::from_text("code/content/probe.dm", content)]);
         tree.root = root.clone();
         let sem = Sem::build(&root, &tree).unwrap();
         let decls = Decls::get(&tree);
@@ -2736,7 +2742,7 @@ mod closed_walk_tests {
 
     #[test]
     fn a_virtual_call_reads_the_union_of_its_overrides() {
-        let content = "/datum/shape\n\tvar/w = 1\n\tvar/h = 2\n\tvar/depth = 3\nTRACKED(/datum/shape, w)\nTRACKED(/datum/shape, h)\nTRACKED(/datum/shape, depth)\n/datum/shape/proc/area()\n\treturn w\n/datum/shape/proc/probe()\n\treturn area()\n/datum/shape/wide/proc/area()\n\treturn w + h\n/datum/shape/wide/deep/proc/area()\n\treturn ..() + depth\n/datum/shape/wide/deep/deeper\n/datum/shape/other/proc/unrelated()\n\treturn depth\n";
+        let content = "/datum/shape\n\tvar/w = 1\n\tvar/h = 2\n\tvar/depth = 3\nTRACKED(/datum/shape, w)\nTRACKED(/datum/shape, h)\nTRACKED(/datum/shape, depth)\n/datum/shape/proc/area()\n\treturn w\n/datum/shape/proc/probe()\n\treturn area()\n/datum/shape/wide/area()\n\treturn w + h\n/datum/shape/wide/deep/area()\n\treturn ..() + depth\n/datum/shape/wide/deep/deeper\n/datum/shape/other/proc/unrelated()\n\treturn depth\n";
         let (root, tree, sem) = model(&[("code/defines.dm", MACROS), ("code/content.dm", content)]);
         let decls = Decls::get(&tree);
         let ann = Annotations::get(&sem, &decls);
@@ -2751,7 +2757,7 @@ mod closed_walk_tests {
 
     #[test]
     fn a_recursive_virtual_call_terminates() {
-        let content = "/datum/node\n\tvar/n = 0\n\tvar/datum/node/next\nTRACKED(/datum/node, n)\n/datum/node/proc/walk()\n\treturn n + walk()\n/datum/node/leaf/proc/walk()\n\treturn n + ..()\n";
+        let content = "/datum/node\n\tvar/n = 0\n\tvar/datum/node/next\nTRACKED(/datum/node, n)\n/datum/node/proc/walk()\n\treturn n + walk()\n/datum/node/leaf/walk()\n\treturn n + ..()\n";
         let (root, tree, sem) = model(&[("code/defines.dm", MACROS), ("code/content.dm", content)]);
         let decls = Decls::get(&tree);
         let ann = Annotations::get(&sem, &decls);

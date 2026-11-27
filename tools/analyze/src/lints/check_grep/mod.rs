@@ -605,7 +605,7 @@ TRACKED(/obj/item/flagged, slot_flags)
     set_slot_flags(slot_flags & (other.slot_flags & 1))
     if((slot_flags & 1) && set_slot_flags(slot_flags & ~2))
         return
-/obj/item/flagged/inherited/proc/probe()
+/obj/item/flagged/inherited/probe()
     set_slot_flags(slot_flags & ~2)
 /obj/item/lookalike
     var/slot_flags = 3

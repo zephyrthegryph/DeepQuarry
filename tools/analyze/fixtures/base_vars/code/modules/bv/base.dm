@@ -26,7 +26,7 @@
 	var/dupe
 /mob/living
 	var/living_plain
-	var/dupe
+	var/dupe_living
 /mob/living/carbon
 	var/carbon_plain
 /mob/living/carbon/human
