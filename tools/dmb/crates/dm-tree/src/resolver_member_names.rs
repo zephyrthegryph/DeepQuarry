@@ -31,9 +31,9 @@ impl SemanticTree {
             return;
         }
         let root = SymbolId::of("/");
-        let mut flags: BTreeMap<SymbolId, u8> = names.iter().map(|name| (*name, 0)).collect();
+        let mut flags: Vec<(SymbolId, u8)> = names.iter().map(|name| (*name, 0)).collect();
         for node in self.members.iter() {
-            let Some(entry) = flags.get_mut(&node.name) else { continue };
+            let Some((_, entry)) = flags.iter_mut().find(|(name, _)| *name == node.name) else { continue };
             if self.types[node.owner.index()].path == root || node.metadata.procedure.is_none() {
                 continue;
             }

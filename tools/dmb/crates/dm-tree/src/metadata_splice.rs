@@ -359,11 +359,19 @@ impl MetadataDependencies {
                     .collect();
                 laps.lap("arena");
                 let mut direct: HashMap<Group, MemberId> = (*previous_tree.direct).clone();
-                if !removed_slots.is_empty() {
-                    // A removed member's group is renormalized by `rebind`; a moved member keeps its selection.
-                    direct.retain(|_, id| !removed_set.contains(id));
-                    for (_, id) in direct.iter_mut() {
-                        if let Some(pair) = moved.iter().find(|pair| pair.0 == *id) {
+                // A removed member's group is renormalized by `rebind`; a moved member keeps its selection. Only a member's own
+                // group can select it.
+                for &slot in &removed_slots {
+                    let node = &previous_tree.members[slot.index()];
+                    let group = (node.owner, node.name, node.kind);
+                    if direct.get(&group) == Some(&slot) {
+                        direct.remove(&group);
+                    }
+                }
+                for pair in &moved {
+                    let node = &previous_tree.members[pair.0.index()];
+                    if let Some(id) = direct.get_mut(&(node.owner, node.name, node.kind)) {
+                        if *id == pair.0 {
                             *id = pair.1;
                         }
                     }

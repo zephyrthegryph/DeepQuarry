@@ -110,6 +110,11 @@ impl CallableAbiRoster {
             entries[ordinal] = Some(entry);
             meanings[ordinal] = Some(meaning);
         }
+        // A removed callable may have been its owner's last: the graph names the ancestry of the owners it still has.
+        if old_to_new.iter().any(Option::is_none) {
+            let owners: std::collections::HashSet<SymbolId> = identities.iter().map(|identity| identity.owner).collect();
+            ancestry.retain(|owner, _| owners.contains(owner));
+        }
         Ok(Arc::new(Self {
             entries: entries.into_iter().map(|entry| entry.ok_or("ABI entry not placed")).collect::<Result<_, _>>()?,
             types: tree.shared_types(),

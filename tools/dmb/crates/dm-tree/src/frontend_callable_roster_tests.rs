@@ -240,6 +240,10 @@ fn inserted_bodies_equal_a_fresh_issue_through_declaration_edits() {
         // The middle override removed (the chain below relinks to the declaration again), then the first new proc.
         "/datum/a/proc/p()\n    return 1\n/datum/a/proc/q()\n    return 2\n/datum/a/child/p()\n    return ..()\n/datum/b\n    var/x = 1\n    var/y = 2\n/datum/b/proc/s()\n    return 3\n/datum/b/proc/t()\n    return 4\n",
         "/datum/a/proc/p()\n    return 1\n/datum/a/child/p()\n    return ..()\n/datum/b\n    var/x = 1\n    var/y = 2\n/datum/b/proc/s()\n    return 3\n/datum/b/proc/t()\n    return 4\n",
+        // A type with a var, a proc on it, then the proc's removal (the owner leaves the ABI graph).
+        "/datum/a/proc/p()\n    return 1\n/datum/a/child/p()\n    return ..()\n/datum/b\n    var/x = 1\n    var/y = 2\n/datum/b/proc/s()\n    return 3\n/datum/b/proc/t()\n    return 4\n/datum/d\n    var/z = 1\n",
+        "/datum/a/proc/p()\n    return 1\n/datum/a/child/p()\n    return ..()\n/datum/b\n    var/x = 1\n    var/y = 2\n/datum/b/proc/s()\n    return 3\n/datum/b/proc/t()\n    return 4\n/datum/d\n    var/z = 1\n/datum/d/proc/u()\n    return 5\n",
+        "/datum/a/proc/p()\n    return 1\n/datum/a/child/p()\n    return ..()\n/datum/b\n    var/x = 1\n    var/y = 2\n/datum/b/proc/s()\n    return 3\n/datum/b/proc/t()\n    return 4\n/datum/d\n    var/z = 1\n",
         // A var removed (only vars: the roster is kept).
         "/datum/a/proc/p()\n    return 1\n/datum/a/child/p()\n    return ..()\n/datum/b\n    var/x = 1\n/datum/b/proc/s()\n    return 3\n/datum/b/proc/t()\n    return 4\n",
     ];
@@ -253,5 +257,5 @@ fn inserted_bodies_equal_a_fresh_issue_through_declaration_edits() {
         let fresh = CallableRoster::issue(&current.snapshot.tree, &current.bodies).unwrap();
         assert_eq!(roster.first_difference(&fresh), None, "step {step}: {outcomes:?}");
     }
-    assert!(inserted >= 4, "the update ran ({inserted} of 5 callable edits)");
+    assert!(inserted >= 5, "the update ran ({inserted} of 7 callable edits)");
 }
