@@ -1504,6 +1504,11 @@ mod tests {
 /// The daemon's shared state, for analysis requests that take their front end from a compile session (`hosted_frontend`).
 static HOSTED: std::sync::OnceLock<Arc<Shared>> = std::sync::OnceLock::new();
 
+/// `DQ_FRONTEND_TRACE=1` in an analysis request's environment: print the hosted front end's phases to its stderr.
+fn frontend_trace() -> bool {
+    matches!(dq_hostio::var("DQ_FRONTEND_TRACE").as_deref(), Ok("1"))
+}
+
 /// Whether this process is the daemon (it serves hosted analysis requests).
 pub(crate) fn hosting() -> bool {
     HOSTED.get().is_some()
@@ -1545,6 +1550,44 @@ pub(crate) fn hosted_frontend(
         let waited = started.elapsed();
         let engine = host
             .engine(project.clone(), defines.clone(), true, include_bytes!("../../../../fixtures/native_template.bin").to_vec())?;
+        // The sources, brought up to date through the watcher: only the files an event named are read again.
+        let sources = host.watched_sources();
+        let refresh = sources.refresh(project.parent().unwrap_or(std::path::Path::new(".")));
+        // A first request reads the manifest's files in parallel before the (serial) planner asks for them one by one.
+        let prefetch_started = Instant::now();
+        let prefetched = sources.prefetch_manifest(&project);
+        let prefetch = prefetch_started.elapsed();
+        let trace_refresh = |outcome: &str| {
+            if frontend_trace() {
+                dq_hostio::out(
+                    false,
+                    format_args!(
+                        "dmbd analyze: sources {} files={} checked={} changed={} in {:.3}s (sync {:.3}s), prefetched {prefetched} in {:.3}s; {outcome}",
+                        refresh.mode,
+                        refresh.files,
+                        refresh.checked,
+                        refresh.changed,
+                        refresh.elapsed.as_secs_f64(),
+                        refresh.sync.as_secs_f64(),
+                        prefetch.as_secs_f64()
+                    ),
+                    true,
+                );
+            }
+        };
+        // Nothing changed since the remembered front end was built from these sources: it is this request's front end (it is a
+        // function of the source texts, the defines and the engine, all three the same).
+        let token = sources.token();
+        // TEMPORARY (measurement only, removed before landing): the old provider, for before/after timings.
+        let legacy = matches!(dq_hostio::var("DQ_FRONTEND_SOURCES").as_deref(), Ok("filesystem"));
+        if legacy {
+        } else if let Some(previous) = host.semantic_state().and_then(|state| state.previous_frontend(&project, defines)) {
+            if previous.plan.input_revision == Some(token) {
+                trace_refresh("unchanged, the remembered front end is reused");
+                return Ok(previous);
+            }
+        }
+        trace_refresh("building");
         let workers = std::thread::available_parallelism().map(|n| n.get()).unwrap_or(4).min(shared.max_workers.max(1));
         let (memo, execution, semantic) = host.execution(workers, None).map_err(|e| e.to_string())?;
         let mut one_shot = dm_tree::frontend::RetainedSemanticTree::one_shot();
@@ -1558,7 +1601,7 @@ pub(crate) fn hosted_frontend(
             .run(|executor| {
                 dm_tree::frontend::build_with_executor_and_semantic_state(
                     &project,
-                    &dm_preprocess::FileSystem,
+                    &LegacyOr(legacy, sources.provider()),
                     defines,
                     dm_tree::frontend::FrontendConfig { workers, engine: Some(engine.frontend_seed()), observer: None },
                     memo.as_ref().map(|memo| memo as &dyn dm_preprocess::regions::ExpansionMemo),
@@ -1579,7 +1622,38 @@ pub(crate) fn hosted_frontend(
             started.elapsed(),
             waited
         ));
+        // The front end's own record of this request (plan reuse, expansion reuse, every phase's wall time), into the analysis
+        // request's stderr with `DQ_FRONTEND_TRACE=1`; drained either way so it does not pile up into the next compile's report.
+        let outcomes = dm_tree::change_set::take_outcomes();
+        if frontend_trace() {
+            dq_hostio::out(
+                false,
+                format_args!(
+                    "dmbd analyze: front end {:.3}s (waited {:.3}s for the session, retained={retained})",
+                    started.elapsed().as_secs_f64(),
+                    waited.as_secs_f64()
+                ),
+                true,
+            );
+            for outcome in outcomes {
+                dq_hostio::out(false, format_args!("dmbd analyze: {outcome}"), true);
+            }
+        }
         Ok(revision)
     })()
     .inspect_err(|error| super::emit_stderr(format_args!("dmbd analyze: the retained session gave no front end: {error}"))))
+}
+
+/// TEMPORARY (measurement only, removed before landing).
+struct LegacyOr<'a>(bool, crate::watched_sources::Provider<'a>);
+impl dm_preprocess::SourceProvider for LegacyOr<'_> {
+    fn read(&self, path: &std::path::Path) -> Result<String, String> {
+        if self.0 { dm_preprocess::FileSystem.read(path) } else { self.1.read(path) }
+    }
+    fn revision(&self) -> Option<u64> {
+        if self.0 { None } else { self.1.revision() }
+    }
+    fn changes_since(&self, revision: u64) -> Option<Arc<std::collections::BTreeSet<std::path::PathBuf>>> {
+        if self.0 { None } else { self.1.changes_since(revision) }
+    }
 }

@@ -172,6 +172,7 @@ mod frontend_timing_tests {
                 worker_fresh_facts: Duration::from_secs(99),
                 ..Default::default()
             },
+            phases: Vec::new(),
         };
         let value = super::frontend_stage_wall_seconds(&timings);
         assert_eq!(value["directive_planning"], 0.125);

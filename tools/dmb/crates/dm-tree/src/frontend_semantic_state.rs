@@ -19,9 +19,17 @@ pub struct RetainedSemanticTree {
     /// The last published frontend with the project and defines it was built for: the base the next
     /// request's plan and expansion adopt their unchanged include subtrees and regions from.
     previous: Option<(std::path::PathBuf, std::collections::BTreeMap<String, String>, super::FrontendRevision)>,
+    /// Revisions built in this state (`next_revision`).
+    revisions: u64,
+    /// The deltas of the last `DELTA_LOG` remembered revisions, oldest first (`changes_since`).
+    deltas: std::collections::VecDeque<super::FrontendDelta>,
 }
+/// Remembered deltas; a consumer that last saw an older revision recomputes.
+const DELTA_LOG: usize = 64;
 struct Entry {
     index: crate::declaration_contributions::KeyedDeclarations,
+    /// The authored skeleton leaves `index` was made from (the same rows), compared with the next request's leaf by leaf.
+    leaves: crate::skeleton_roster::SkeletonRoster,
     symbols: Arc<dm_ir::SymbolTable>,
     symbol_catalog: Option<Arc<super::symbol_catalog::SymbolCatalog>>,
     engine: Option<EngineSeed>,
@@ -37,6 +45,16 @@ impl RetainedSemanticTree {
         defines: &std::collections::BTreeMap<String, String>,
         revision: super::FrontendRevision,
     ) {
+        // A chain of deltas, so a consumer that last saw an older revision asks `changes_since`.
+        match &revision.delta {
+            Some(delta) => {
+                self.deltas.push_back(delta.clone());
+                while self.deltas.len() > DELTA_LOG {
+                    self.deltas.pop_front();
+                }
+            }
+            None => self.deltas.clear(),
+        }
         // The replaced revision usually owns the last references to the previous request's tree,
         // syntax and body arena.
         release_in_background(
@@ -44,7 +62,28 @@ impl RetainedSemanticTree {
                 .replace((project.to_path_buf(), defines.clone(), revision)),
         );
     }
-    pub(super) fn previous_frontend(
+    /// A number for the next revision built in this state (`ColdFrontend::revision`).
+    pub(super) fn next_revision(&mut self) -> u64 {
+        self.revisions += 1;
+        self.revisions
+    }
+    /// What changed from revision `base` to the remembered frontend (`remember_frontend`): the chained deltas of the
+    /// revisions since. `None` when the chain does not reach back to `base` (a revision built without a delta in between,
+    /// or one older than the log): the consumer recomputes everything.
+    pub fn changes_since(&self, base: u64) -> Option<super::FrontendDelta> {
+        let (_, _, current) = self.previous.as_ref()?;
+        if base == current.revision {
+            return Some(super::FrontendDelta { base, revision: base, ..Default::default() });
+        }
+        let start = self.deltas.iter().position(|delta| delta.base == base)?;
+        let mut chained = self.deltas[start].clone();
+        for delta in self.deltas.iter().skip(start + 1) {
+            chained = chained.then(delta)?;
+        }
+        (chained.revision == current.revision).then_some(chained)
+    }
+    /// The frontend `remember_frontend` kept for this project and define set (the base the next request adopts from).
+    pub fn previous_frontend(
         &self,
         project: &std::path::Path,
         defines: &std::collections::BTreeMap<String, String>,
@@ -342,7 +381,7 @@ impl RetainedSemanticTree {
         });
         let symbols = (self.entry.is_some() && !shared_catalog).then(|| adapted.symbols.ordered());
         let reusable = self.entry.as_ref().filter(|entry| {
-            entry.index.skeletons().eq(adapted.skeletons.iter())
+            entry.leaves.same_rows(&adapted.skeletons)
                 && (shared_catalog
                     || symbols
                         .as_ref()
@@ -545,6 +584,7 @@ impl RetainedSemanticTree {
                 release_in_background(previous);
             }
             entry.symbol_catalog = adapted.symbol_catalog.clone();
+            entry.leaves = adapted.skeletons.clone();
             entry.symbols = symbol_owner;
             // Body indexing follows this return and may fail. Do not keep the
             // previous tree rooted through its now-foreign callable roster.
@@ -564,6 +604,7 @@ impl RetainedSemanticTree {
         // Capture admission inputs before consuming them; never memoize failures.
 
         let symbol_catalog = adapted.symbol_catalog.clone();
+        let leaves = adapted.skeletons.clone();
         adapted.origins = origins.into();
         let mut snapshot = adapted.finish_with_engine_normalization(
             engine,
@@ -632,6 +673,7 @@ impl RetainedSemanticTree {
                 );
             Entry {
                 index,
+                leaves,
                 symbols: symbol_owner,
                 symbol_catalog,
                 engine: engine.cloned(),

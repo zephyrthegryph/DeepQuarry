@@ -21,6 +21,7 @@ pub mod expansion_memo;
 pub mod filesystem_proofs;
 pub mod frozen_inputs;
 pub mod fs_watch;
+pub mod watched_sources;
 pub mod heap_census;
 pub mod input_snapshot;
 pub(crate) mod local_warnings;
