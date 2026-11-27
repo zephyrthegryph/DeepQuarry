@@ -1045,7 +1045,7 @@ equal the full lookup`, `... reused bodies equal the full indexing`); dm-tree te
 daemon compiles with `DMB_FRONTEND_VERIFY=1` (0 mismatches; 346,497 origins and 105,144 bodies verified) against one-shot cold
 compiles of the same source: body edit and line shift byte-identical, new var `dmb-equiv` EQUIVALENT (table order, as before),
 revert byte-identical. Analysis: hosted against cold in the same daemon, `dreamchecker --json` identical at base, body, line
-shift, new var, new proc and revert; `check --raw --no-cache` identical at base and new var, and on master  1168027 of 1168027 and  105882 of 105882 with this compiler;  passes.
+shift, new var, new proc and revert; `check --raw --no-cache` identical at base and new var, and on master `analysis-parity --tree` 1168027 of 1168027 and `analysis-parity` 105882 of 105882 with this compiler; `check_ratchets.sh --changed-only` passes.
 
 Measured (hosted analysis front end; the machine stayed busy with other lanes, so single runs vary by 2-3x):
 
