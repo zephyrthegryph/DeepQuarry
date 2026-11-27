@@ -228,13 +228,29 @@ pub fn root_of(argv: &[String]) -> PathBuf {
     find_root(parse(argv.to_vec()).root)
 }
 
+/// The root a run of `argv` started in `cwd` finds (a host asks on behalf of a client in another directory).
+pub fn root_in(argv: &[String], cwd: &Path) -> PathBuf {
+    if let Some(r) = parse(argv.to_vec()).root {
+        return if r.is_absolute() { r } else { cwd.join(r) };
+    }
+    let mut dir = cwd.to_path_buf();
+    loop {
+        if dir.join("deepquarry.dme").exists() {
+            return dir;
+        }
+        if !dir.pop() {
+            return cwd.to_path_buf();
+        }
+    }
+}
+
 /// One request inside a long-lived host process (the dmbc daemon): `argv` as the client gave it, its environment and working
 /// directory, its output to `sink`. Returns the exit code the same command returns standalone.
 ///
 /// Requests run one at a time. Each runs on threads of its own (a fresh thread and its own worker pool, so no thread-local state
 /// carries over), inside a `dq_hostio` scope; afterwards the run state is reset (`crate::host`), so the next request starts as a
 /// fresh process would.
-pub fn run_hosted(argv: Vec<String>, env: std::collections::HashMap<String, String>, cwd: PathBuf, sink: std::sync::Arc<dq_hostio::Sink>) -> u8 {
+pub fn run_hosted(argv: Vec<String>, env: std::collections::HashMap<String, String>, cwd: PathBuf, sink: std::sync::Arc<dq_hostio::Sink>) -> Hosted {
     let _one = HOSTED.lock().unwrap_or_else(|e| e.into_inner());
     take_pending_reset();
     let scope = dq_hostio::Scope { env, cwd, sink };
@@ -255,29 +271,57 @@ pub fn run_hosted(argv: Vec<String>, env: std::collections::HashMap<String, Stri
                 Ok(p) => p,
                 Err(e) => {
                     eprintln!("analyze: could not start the request's worker pool: {e}");
-                    return 70;
+                    return Hosted::failed();
                 }
             };
             let code = pool.install(|| std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| run_all(argv))));
             drop(pool);
-            match code {
+            let code = match code {
                 Ok(c) => c,
                 Err(_) => {
                     eprintln!("analyze: internal panic in a hosted request");
                     70
                 }
-            }
+            };
+            Hosted { code, report: crate::report::take(), env_reads: dq_hostio::env_reads(), spawned_child: dq_hostio::spawned_child() }
         })
     });
-    let code = match worker {
-        Ok(h) => h.join().unwrap_or(70),
-        Err(_) => 70,
+    let done = match worker {
+        Ok(h) => h.join().unwrap_or_else(|_| Hosted::failed()),
+        Err(_) => Hosted::failed(),
     };
     // The request is answered now; freeing what it built (seconds for a whole-tree model, which a process that exits never pays)
     // is the start of the next request's turn, done by [`finish_hosted`] after the reply.
     *HOSTED_ROOT.lock().unwrap_or_else(|e| e.into_inner()) = None;
     *PENDING_RESET.lock().unwrap_or_else(|e| e.into_inner()) = true;
-    code
+    done
+}
+
+/// What one hosted request did: its exit code, the report it made (a `check`), and what it depended on beyond the files under its
+/// root: the variables it read from its environment and whether it ran a child command.
+pub struct Hosted {
+    pub code: u8,
+    pub report: Option<crate::report::Report>,
+    pub env_reads: Vec<(String, Option<String>)>,
+    pub spawned_child: bool,
+}
+
+impl Hosted {
+    fn failed() -> Hosted {
+        Hosted { code: 70, report: None, env_reads: Vec::new(), spawned_child: true }
+    }
+}
+
+/// Whether the answer to `argv` is a function of the files under its root and the variables it reads, so a host may give the same
+/// answer again while none of them changed: a `check` that prints no timings, compares nothing with git and keeps its caches.
+/// `DQ_ALLOW_USAGE` makes the check append to a file outside the report, so a run with it set always runs. (`gen` and `baseline`
+/// write files; `dreamchecker` and the rest are not remembered yet.)
+pub fn rememberable(argv: &[String], env: &std::collections::HashMap<String, String>) -> bool {
+    let a = parse(argv.to_vec());
+    let has = |f: &str| a.flags.iter().any(|x| x == f);
+    a.cmd == "check"
+        && !["--changed-only", "--timing", "--no-cache", "--rehash"].iter().any(|f| has(f))
+        && dq_hostio::lookup(env, "DQ_ALLOW_USAGE").is_none_or(|v| v.is_empty())
 }
 
 /// A finished request whose run state is not yet reset.
@@ -336,6 +380,13 @@ pub fn shed_hosted() -> bool {
     true
 }
 
+/// Drops the analysis stores held in memory (idle, or short of memory; their slots are on disk after every run). False when a
+/// request is running or nothing was held.
+pub fn shed_stores() -> bool {
+    let Ok(_one) = HOSTED.try_lock() else { return false };
+    crate::incr::shed() > 0
+}
+
 /// Whether anything is read ahead.
 pub fn hosted_resident() -> bool {
     HOSTED_ROOT.lock().unwrap_or_else(|e| e.into_inner()).is_some()
@@ -344,7 +395,12 @@ pub fn hosted_resident() -> bool {
 /// One run of `argv`, with the end-of-run work.
 fn run_all(argv: Vec<String>) -> u8 {
     let code = real_main(argv);
-    // Hand the cache files this run rewrote to the other worktrees (src/shared.rs).
+    // The query stores' changed slots go to disk (src/incr.rs), then the cache files this run rewrote to the other worktrees
+    // (src/shared.rs).
+    crate::incr::flush();
+    if dq_hostio::var_os("DQ_ANALYZE_TRACE").is_some() {
+        eprintln!("analyze: {}", crate::incr::stats());
+    }
     crate::shared::publish();
     crate::sem::model_store::finish();
     crate::sem::walk_cache::finish();
@@ -418,6 +474,8 @@ fn real_main(argv: Vec<String>) -> ExitCode {
                 }
                 return ExitCode::from(2);
             }
+            // Everything the check prints on stdout is this report, rendered at the end (`report.rs`).
+            let mut report = crate::report::Report::new(&args.cmd);
             // Fixture selftests first: a lint whose own fixtures fail can't be trusted to ratchet.
             let mut failed: Vec<String> = Vec::new();
             let t_self = Instant::now();
@@ -432,7 +490,7 @@ fn real_main(argv: Vec<String>) -> ExitCode {
                     crate::incr::suspend(true);
                     for lint in run::selected(&engine.reg, &engine.opts.lints) {
                         if let Err(e) = lint.selftest() {
-                            println!("selftest FAILED: {}: {}", lint.meta().name, e);
+                            report.line(format!("selftest FAILED: {}: {}", lint.meta().name, e));
                             failed.push(format!("{} --selftest", lint.meta().name));
                         }
                     }
@@ -450,9 +508,12 @@ fn real_main(argv: Vec<String>) -> ExitCode {
             if dq_hostio::var("DQ_ANALYZE_TRACE").is_ok() {
                 eprintln!("analyze: startup {:.0?}, selftests {:.0?}, lints {:.0?}, files loaded {}", t_self.duration_since(t0), t_run.duration_since(t_self), t_run.elapsed(), engine.tree.fresh_count());
             }
-            let (text, lint_failed) = run::render(&outcomes, engine.opts.ci);
-            failed.extend(lint_failed);
-            print!("{}", text);
+            for o in &outcomes {
+                report.lint(run::lint_report(o, engine.opts.ci));
+                if o.failed {
+                    failed.push(o.name.clone());
+                }
+            }
             write_allow_usage(&engine, &outcomes);
             // The unused-ALLOW check needs every lint's usage: a full run only. While legacy Python
             // lints remain, check_ratchets.sh keeps doing it (they record into DQ_ALLOW_USAGE).
@@ -465,23 +526,29 @@ fn real_main(argv: Vec<String>) -> ExitCode {
                     problems = recheck_unused_cold(&root, problems);
                 }
                 for p in &problems {
-                    println!("{}", p);
+                    report.line(p);
                 }
-                println!("allow annotations: {} unused", problems.len());
+                report.line(format!("allow annotations: {} unused", problems.len()));
                 if !problems.is_empty() {
                     failed.push("allow_annotations --unused".to_string());
                 }
             }
             if has("--timing") {
-                print_timing(&engine, &outcomes, t0.elapsed());
+                report.text(timing_table(&engine, &outcomes, t0.elapsed()));
             }
-            if failed.is_empty() {
-                println!("All ratchet lints passed.");
+            let code = if failed.is_empty() {
+                report.line("All ratchet lints passed.");
                 ExitCode::SUCCESS
             } else {
-                println!("Ratchet lints failed: {}", failed.join(" "));
+                report.line(format!("Ratchet lints failed: {}", failed.join(" ")));
                 ExitCode::FAILURE
-            }
+            };
+            report.exit = exit_byte(code);
+            // Standalone there is no history of reports: revision 0, and `--since` counts everything as added.
+            let (_, view) = crate::report::View::split(&RUN_ARGV.get().cloned().unwrap_or_default());
+            print!("{}", view.render(&report, 0, None));
+            crate::report::publish(report);
+            code
         }
         "timing" => {
             let o = options(&args, &root);
@@ -494,7 +561,7 @@ fn real_main(argv: Vec<String>) -> ExitCode {
                 }
             };
             let outcomes = engine.run_all();
-            print_timing(&engine, &outcomes, t0.elapsed());
+            print!("{}", timing_table(&engine, &outcomes, t0.elapsed()));
             ExitCode::SUCCESS
         }
         "baseline" => {
@@ -626,13 +693,16 @@ fn real_main(argv: Vec<String>) -> ExitCode {
     }
 }
 
-fn print_timing(engine: &Engine, outcomes: &[run::Outcome], total: std::time::Duration) {
-    println!("\n-- timing (tree load {:.0?}, {} files in tree, meta cache {} entries) --", engine.load_time, engine.files_read, engine.meta_len());
+fn timing_table(engine: &Engine, outcomes: &[run::Outcome], total: std::time::Duration) -> String {
+    use std::fmt::Write as _;
+    let mut s = String::new();
+    let _ = writeln!(s, "\n-- timing (tree load {:.0?}, {} files in tree, meta cache {} entries) --", engine.load_time, engine.files_read, engine.meta_len());
     let mut rows: Vec<&run::Outcome> = outcomes.iter().collect();
     rows.sort_by(|a, b| b.timing.total.cmp(&a.timing.total));
-    println!("{:<30} {:>9} {:>7} {:>9} {:>6}", "lint", "time", "files", "rescanned", "memo");
+    let _ = writeln!(s, "{:<30} {:>9} {:>7} {:>9} {:>6}", "lint", "time", "files", "rescanned", "memo");
     for o in rows {
-        println!(
+        let _ = writeln!(
+            s,
             "{:<30} {:>9.1?} {:>7} {:>9} {:>6}",
             o.name,
             o.timing.total,
@@ -641,7 +711,8 @@ fn print_timing(engine: &Engine, outcomes: &[run::Outcome], total: std::time::Du
             if o.timing.tree_memo_hit { "hit" } else { "-" }
         );
     }
-    println!("total wall time: {:.2?}", total);
+    let _ = writeln!(s, "total wall time: {:.2?}", total);
+    s
 }
 
 /// With `DQ_ALLOW_USAGE=<file>` set (check_ratchets.sh), appends one `lint<TAB>file digest<TAB>line`
@@ -680,4 +751,5 @@ fn write_allow_usage(engine: &Engine, outcomes: &[run::Outcome]) {
 /// Run state for `crate::host::reset_run_state`.
 pub(crate) fn reset() {
     crate::host::clear(&RUN_ARGV);
+    let _ = crate::report::take();
 }

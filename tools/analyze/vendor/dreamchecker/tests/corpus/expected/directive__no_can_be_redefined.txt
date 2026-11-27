@@ -1,0 +1,3 @@
+fixture.dm, line 4, column 10:
+hint: redefining proc /mob/test [redefined_proc]
+- 1:15: previous definition is here

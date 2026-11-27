@@ -163,7 +163,7 @@ fn emit(out: &mut Sink, f: &SourceFile, rule: &str, line: usize) {
 }
 
 /// One file's part of the declared-field index (`FwlIndex::build` over that one file).
-#[derive(Serialize, Deserialize, Default, PartialEq)]
+#[derive(Clone, Serialize, Deserialize, Default, PartialEq)]
 struct FwFacts {
     fields: Vec<(String, Vec<String>)>,
     members: BTreeMap<String, BTreeMap<String, String>>,

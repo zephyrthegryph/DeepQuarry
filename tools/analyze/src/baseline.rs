@@ -190,6 +190,21 @@ pub fn check_sites(
     banned: &[&str],
     out: &mut String,
 ) -> bool {
+    check_sites_into(label, tree, by_rule, hints, path, banned, out, &mut Vec::new())
+}
+
+/// [`check_sites`], also listing the new sites it reported as `(file, line, rule)` in `fresh_sites`.
+#[allow(clippy::too_many_arguments)]
+pub fn check_sites_into(
+    label: &str,
+    tree: &Tree,
+    by_rule: &[(&str, Vec<&Site>)],
+    hints: &dyn Fn(&str) -> String,
+    path: &Path,
+    banned: &[&str],
+    out: &mut String,
+    fresh_sites: &mut Vec<(String, u32, String)>,
+) -> bool {
     let base = read_sites(path);
     let mut failed = false;
     let mut new_lines: Vec<String> = Vec::new();
@@ -220,6 +235,7 @@ pub fn check_sites(
         let _ = writeln!(out, "{} {:<19} {:>6}  (baseline {})  {}", label, rule, found.len(), known, status);
         let hint = hints(rule);
         for (rel, number, text) in fresh {
+            fresh_sites.push((rel.clone(), number, rule.to_string()));
             let suffix = if hint.is_empty() { String::new() } else { format!(" -- {}", hint) };
             new_lines.push(format!("{}:{}: [{}/{}] {}{}", rel, number, label, rule, text, suffix));
         }

@@ -1,0 +1,2 @@
+fixture.dm, line 3, column 23:
+error: value must be a variable in a for (var/key, value) statement

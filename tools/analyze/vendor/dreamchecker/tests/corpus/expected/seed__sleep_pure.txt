@@ -1,0 +1,27 @@
+fixture.dm, line 5, column 2:
+error: call to pure proc pure_thing discards return value
+- 2:2: prohibited by this must_be_pure annotation
+fixture.dm, line 15, column 22:
+error: /proc/sleeps_builtins sets SpacemanDMM_should_not_sleep but calls blocking built-in(s) [must_not_sleep]
+- 16:2: SpacemanDMM_should_not_sleep set here
+- 17:2: alert() called here
+- 18:2: shell() called here
+- 19:2: winexists() called here
+- 20:2: winget() called here
+- 21:2: input() called here
+- 22:7: world.Export() called here
+- 23:3: client.SoundQuery() called here
+- 24:3: client.MeasureText() called here
+fixture.dm, line 35, column 26:
+error: /datum/proc/calls_sleeper calls /datum/proc/sleeper which has override child proc that sleeps /datum/child/proc/sleeper [must_not_sleep]
+- 36:2: SpacemanDMM_should_not_sleep set here
+- 37:2: /datum/proc/sleeper() called here
+- 34:2: sleep() called here
+fixture.dm, line 6, column 13:
+error: /proc/impure does impure operations [must_be_pure]
+- 7:2: SpacemanDMM_should_be_pure set here
+- 8:2: purity breaking << on expression happens here
+- 9:2: purity breaking << on expression happens here
+- 9:2: LShift onto mob happens here
+- 10:2: purity breaking << on expression happens here
+- 10:2: LShift onto savefile happens here

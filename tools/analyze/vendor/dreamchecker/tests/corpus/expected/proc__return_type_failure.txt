@@ -1,0 +1,4 @@
+fixture.dm, line 4, column 13:
+error: cannot specify a return type for a proc override
+fixture.dm, line 7, column 22:
+error: bad input type: 'incorrect'

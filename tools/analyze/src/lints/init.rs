@@ -69,7 +69,7 @@ static META: Meta = Meta {
 
 /// One file's part of the table-init pass: its declared table-init rows `(type, on)` in file order,
 /// and its `Initialize()` / `LateInitialize()` headers `(line, type)` that no ALLOW(init) kept.
-#[derive(Serialize, Deserialize, Default, PartialEq)]
+#[derive(Clone, Serialize, Deserialize, Default, PartialEq)]
 struct TableFacts {
     flags: Vec<(String, bool)>,
     headers: Vec<(u32, String)>,

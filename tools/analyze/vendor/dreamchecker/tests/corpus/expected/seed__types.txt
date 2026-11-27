@@ -1,0 +1,53 @@
+fixture.dm, line 11, column 15:
+error: undefined var: "missing_var"
+fixture.dm, line 12, column 2:
+error: undefined proc: "missing_proc" on (global)
+fixture.dm, line 13, column 21:
+error: undefined field: "missing_global" on (global)
+fixture.dm, line 14, column 8:
+error: undefined proc: "missing_global_proc" on (global)
+fixture.dm, line 16, column 16:
+warning: field access requires static type: "num" [field_access_static_type]
+- 15:19: add additional type info here
+fixture.dm, line 17, column 3:
+warning: proc call requires static type: "act" [proc_call_static_type]
+- 15:19: add additional type info here
+fixture.dm, line 19, column 16:
+error: undefined field: "nope" on /datum/thing
+fixture.dm, line 20, column 3:
+error: undefined proc: "nope" on /datum/thing
+fixture.dm, line 22, column 2:
+error: undefined type: /datum/nonexistent
+fixture.dm, line 24, column 10:
+error: failed to resolve path /datum/missing
+fixture.dm, line 26, column 2:
+error: failed to resolve path /datum/missing
+fixture.dm, line 28, column 10:
+error: no type hint available on implicit new() [no_typehint_implicit_new]
+fixture.dm, line 37, column 2:
+hint: iterating over a /datum which might not be an /atom
+fixture.dm, line 40, column 2:
+error: iterating over a /datum/thing which cannot be iterated
+fixture.dm, line 45, column 2:
+error: iterating over a /datum/thing which cannot be iterated
+fixture.dm, line 49, column 3:
+error: Attempting operator++ on a /datum/other which does not overload operator++
+fixture.dm, line 50, column 2:
+error: Attempting operator-- on a /datum/other which does not overload operator--
+fixture.dm, line 52, column 3:
+error: Attempting operator++ on a /datum/thing which does not overload operator++
+fixture.dm, line 54, column 3:
+error: Attempting operator++ on a list which does not overload operator++
+fixture.dm, line 57, column 27:
+error: undefined field: "nope" on /datum/thing
+fixture.dm, line 58, column 15:
+error: failed to resolve path /datum/missing
+fixture.dm, line 58, column 29:
+error: no typepath found for: "num"
+fixture.dm, line 62, column 27:
+error: undefined proc: "nothing" on /datum/thing
+fixture.dm, line 34, column 2:
+error: proc has no parent: /datum/other/proc/lonely [proc_has_no_parent]
+fixture.dm, line 30, column 17:
+hint: redefining proc /datum/thing/act [redefined_proc]
+- 5:22: previous definition is here

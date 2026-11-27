@@ -24,6 +24,22 @@ pub fn top_level_assignment_index(source: &str) -> Option<usize> {
     }
     None
 }
+/// The `(` a control's parenthesized clause opens with (`if (x)`, `while(x)`, `switch (x)`), found from the clause's first
+/// expression at `at` in `text`: the nearest byte before it that is not blank or a line continuation, when that is `(`.
+pub fn control_open_paren(text: &str, at: usize) -> Option<usize> {
+    let bytes = text.as_bytes();
+    let mut i = at.min(bytes.len());
+    while i > 0 {
+        i -= 1;
+        match bytes[i] {
+            b' ' | b'\t' | b'\r' | b'\n' | b'\\' => continue,
+            b'(' => return Some(i),
+            _ => return None,
+        }
+    }
+    None
+}
+
 pub(super) fn classify(header: &str, has_children: bool) -> ItemKind {
     let h = header.trim();
     let assignment = top_level_assignment_index(h);

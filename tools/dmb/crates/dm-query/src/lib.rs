@@ -18,6 +18,10 @@
 //! Storage is sharded by key (`SHARDS` mutexes, each with its own wake-up), so workers revalidating
 //! different queries do not contend on one lock; the revision is an atomic counter.
 //!
+//! Kinds whose function is not known up front ([`Db::define_local`]) are computed by a function the caller passes at the read
+//! ([`Db::get_with`]): the node keeps its value, hash and dependencies like any other, and revalidates the same way; a read that
+//! finds it red and has no function to run (a dependant revalidating it) sees it as missing, which makes the dependant run.
+//!
 //! Threads: queries may be fetched from several threads. A query being computed by one thread makes
 //! other readers of it wait. Two threads computing queries that read each other deadlock; the graph
 //! of a well-formed compile has no cycles (a same-thread cycle returns [`QueryError::Cycle`]).
@@ -73,10 +77,14 @@ impl Outcome {
 }
 
 type ComputeFn = dyn Fn(&mut Ctx<'_>, &Value) -> Result<Outcome, QueryError> + Send + Sync;
+/// A computation supplied at the read ([`Db::get_with`]).
+pub type LocalFn<'f> = dyn FnMut(&mut Ctx<'_>) -> Result<Outcome, QueryError> + 'f;
 
 struct KindDef {
     name: &'static str,
     compute: Option<Box<ComputeFn>>,
+    /// Computed by the function passed to [`Db::get_with`].
+    local: bool,
 }
 
 struct Node {
@@ -194,7 +202,7 @@ impl Db {
         self.kinds
             .write()
             .unwrap_or_else(|error| error.into_inner())
-            .insert(kind, Arc::new(KindDef { name, compute: None }));
+            .insert(kind, Arc::new(KindDef { name, compute: None, local: false }));
     }
 
     /// Register a derived kind. `compute` must be deterministic in the values it reads.
@@ -207,7 +215,15 @@ impl Db {
         self.kinds
             .write()
             .unwrap_or_else(|error| error.into_inner())
-            .insert(kind, Arc::new(KindDef { name, compute: Some(Box::new(compute)) }));
+            .insert(kind, Arc::new(KindDef { name, compute: Some(Box::new(compute)), local: false }));
+    }
+
+    /// Register a derived kind whose function each read supplies ([`Db::get_with`]).
+    pub fn define_local(&self, kind: Kind, name: &'static str) {
+        self.kinds
+            .write()
+            .unwrap_or_else(|error| error.into_inner())
+            .insert(kind, Arc::new(KindDef { name, compute: None, local: true }));
     }
 
     fn kind_def(&self, kind: Kind) -> Result<Arc<KindDef>, QueryError> {
@@ -280,22 +296,29 @@ impl Db {
     /// Fetch a query's value, revalidating it first. `params` are the parameters the function
     /// receives; they are kept on the node so later revalidations can recompute it.
     pub fn get<T: Any + Send + Sync>(&self, key: Key, params: Value) -> Result<Arc<T>, QueryError> {
-        let done = self.ensure(key, Some(params), true)?;
+        let done = self.ensure(key, Some(params), true, None)?;
+        downcast(done.value, key)
+    }
+
+    /// Fetch a query of a [`Db::define_local`] kind: revalidated as any other, and computed by `compute` when it is red (or
+    /// its value was evicted). `compute` reads through its [`Ctx`] like a registered function, so its reads are recorded.
+    pub fn get_with<T: Any + Send + Sync>(&self, key: Key, compute: &mut LocalFn<'_>) -> Result<Arc<T>, QueryError> {
+        let done = self.ensure(key, Some(Arc::new(())), true, Some(compute))?;
         downcast(done.value, key)
     }
 
     /// Value of an input.
     pub fn input<T: Any + Send + Sync>(&self, key: Key) -> Option<Arc<T>> {
-        let done = self.ensure(key, None, true).ok()?;
+        let done = self.ensure(key, None, true, None).ok()?;
         downcast(done.value, key).ok()
     }
 
     /// Revalidate and return only the content hash.
     pub fn hash(&self, key: Key, params: Value) -> Result<Hash, QueryError> {
-        Ok(self.ensure(key, Some(params), false)?.hash)
+        Ok(self.ensure(key, Some(params), false, None)?.hash)
     }
 
-    fn ensure(&self, key: Key, params: Option<Value>, need_value: bool) -> Result<Done, QueryError> {
+    fn ensure(&self, key: Key, params: Option<Value>, need_value: bool, mut local: Option<&mut LocalFn<'_>>) -> Result<Done, QueryError> {
         let me = std::thread::current().id();
         loop {
             let mut state = self.lock(key);
@@ -305,7 +328,7 @@ impl Db {
                     return Err(QueryError::Missing(key));
                 };
                 let def = self.kind_def(key.kind)?;
-                if def.compute.is_none() {
+                if def.compute.is_none() && !(def.local && local.is_some()) {
                     return Err(QueryError::Missing(key));
                 }
                 state.nodes.insert(
@@ -323,7 +346,7 @@ impl Db {
                     },
                 );
                 drop(state);
-                return self.run(key, &params, revision, true);
+                return self.run(key, &params, revision, true, local);
             };
             if node.input {
                 return Ok(Done { value: node.value.clone(), hash: node.hash, changed_at: node.changed_at });
@@ -344,7 +367,7 @@ impl Db {
                     node.busy = Some(me);
                     let params = node.params.clone();
                     drop(state);
-                    return self.run(key, &params, revision, false);
+                    return self.run(key, &params, revision, false, local);
                 }
                 return Ok(Done { value: node.value.clone(), hash: node.hash, changed_at: node.changed_at });
             }
@@ -358,7 +381,7 @@ impl Db {
             let mut clean = !never;
             if clean {
                 for dep in deps {
-                    match self.ensure(dep, None, false) {
+                    match self.ensure(dep, None, false, None) {
                         Ok(done) => {
                             if done.changed_at > verified {
                                 clean = false;
@@ -375,7 +398,7 @@ impl Db {
             }
             if !clean {
                 guard.armed = false;
-                return self.run(key, &params, revision, false);
+                return self.run(key, &params, revision, false, local);
             }
             let mut state = self.lock(key);
             let done;
@@ -402,7 +425,7 @@ impl Db {
                 }
                 node.busy = Some(me);
                 drop(state);
-                return self.run(key, &params, revision, false);
+                return self.run(key, &params, revision, false, local.take());
             }
             return Ok(done);
         }
@@ -421,7 +444,7 @@ impl Db {
     }
 
     /// Run the function of a node already marked busy by this thread.
-    fn run(&self, key: Key, params: &Value, revision: u64, fresh: bool) -> Result<Done, QueryError> {
+    fn run(&self, key: Key, params: &Value, revision: u64, fresh: bool, local: Option<&mut LocalFn<'_>>) -> Result<Done, QueryError> {
         let mut guard = Busy { db: self, key, armed: true };
         let fail = |db: &Db, guard: &mut Busy<'_>, error: QueryError| {
             if fresh {
@@ -434,11 +457,14 @@ impl Db {
             Ok(def) => def,
             Err(error) => return fail(self, &mut guard, error),
         };
-        let Some(compute) = def.compute.as_ref() else {
-            return fail(self, &mut guard, QueryError::UnknownKind(key.kind));
-        };
         let mut ctx = Ctx { db: self, deps: Vec::new(), seen: HashSet::new() };
-        let result = compute(&mut ctx, params);
+        let result = match (def.compute.as_ref(), local) {
+            (_, Some(f)) if def.local => f(&mut ctx),
+            (Some(compute), _) => compute(&mut ctx, params),
+            // A local kind red with no function at hand: its dependant runs instead.
+            (None, _) if def.local => return fail(self, &mut guard, QueryError::Missing(key)),
+            (None, _) => return fail(self, &mut guard, QueryError::UnknownKind(key.kind)),
+        };
         let deps = ctx.deps;
         let outcome = match result {
             Ok(outcome) => outcome,
@@ -619,7 +645,7 @@ impl Ctx<'_> {
     /// Depend on an input's hash only.
     pub fn observe_input(&mut self, key: Key) -> Result<Hash, QueryError> {
         self.note(key);
-        Ok(self.db.ensure(key, None, false)?.hash)
+        Ok(self.db.ensure(key, None, false, None)?.hash)
     }
 }
 

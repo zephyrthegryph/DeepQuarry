@@ -1,0 +1,6 @@
+fixture.dm, line 15, column 6:
+error: /obj/proc/test attempting to call protected proc /mob/proc/protected2 [protected_proc]
+- 4:5: prohibited by this protected_proc annotation
+fixture.dm, line 17, column 6:
+error: /obj/proc/test attempting to call protected proc /mob/proc/protected [protected_proc]
+- 2:5: prohibited by this protected_proc annotation

@@ -1,0 +1,18 @@
+fixture.dm, line 4, column 5:
+error: filter(type="color") called with invalid 'space' value 'Null'
+- See: http://www.byond.com/docs/ref/#/{notes}/filters/color for the permitted arguments
+fixture.dm, line 15, column 5:
+error: filter(type="alpha") called with invalid keyword parameter 'color'
+- See: http://www.byond.com/docs/ref/#/{notes}/filters/alpha for the permitted arguments
+fixture.dm, line 16, column 5:
+error: filter(type="blur") called with invalid keyword parameter 'x'
+- See: http://www.byond.com/docs/ref/#/{notes}/filters/blur for the permitted arguments
+fixture.dm, line 17, column 5:
+error: filter() called with invalid type keyword parameter value 'fakename'
+fixture.dm, line 18, column 5:
+error: filter() called without mandatory keyword parameter 'type'
+fixture.dm, line 19, column 5:
+error: filter() called without mandatory keyword parameter 'type'
+fixture.dm, line 20, column 5:
+error: filter(type="wave") called with invalid keyword parameter 'color'
+- See: http://www.byond.com/docs/ref/#/{notes}/filters/wave for the permitted arguments

@@ -1,0 +1,2 @@
+fixture.dm, line 2, column 5:
+warning: Switch branches on rand() with range 2 to 3 but no case branch triggers for 3

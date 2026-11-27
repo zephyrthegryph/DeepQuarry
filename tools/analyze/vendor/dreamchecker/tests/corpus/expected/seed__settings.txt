@@ -1,0 +1,30 @@
+fixture.dm, line 2, column 2:
+warning: set background must be 0/1/TRUE/FALSE [invalid_set_value]
+fixture.dm, line 12, column 2:
+warning: unknown linter setting "SpacemanDMM_bogus_setting" [unknown_linter_setting]
+fixture.dm, line 14, column 2:
+warning: invalid value for set Base { term: Spanned { location: Location { file: FileId(2), line: 14, column: 37 }, elem: Int(2) }, follow: [] } [invalid_lint_directive_value]
+fixture.dm, line 16, column 2:
+error: /proc/global_parent sets SpacemanDMM_should_call_parent, which cannot be set on global procs [incompatible_directive]
+fixture.dm, line 32, column 2:
+warning: set waitfor must be 0/1/TRUE/FALSE [invalid_set_value]
+fixture.dm, line 4, column 2:
+warning: set name must have a string value [invalid_set_value]
+fixture.dm, line 8, column 2:
+warning: set invisibility must be 0-100 [invalid_set_value]
+fixture.dm, line 18, column 2:
+warning: /mob/proc/cannot_disable sets SpacemanDMM_should_not_override false, but it cannot be disabled. [disabled_directive]
+fixture.dm, line 21, column 2:
+warning: /mob/proc/twice sets SpacemanDMM_should_call_parent twice [sets_directive_twice]
+- 20:2: first definition here
+fixture.dm, line 29, column 2:
+warning: Can't define procs SpacemanDMM_should_not_sleep outside their initial definition
+fixture.dm, line 38, column 3:
+error: set statement not at the top of the proc [set_has_no_effect]
+fixture.dm, line 22, column 2:
+error: proc has no parent: /mob/proc/twice [proc_has_no_parent]
+fixture.dm, line 25, column 2:
+error: set statement not at the top of the proc [set_has_no_effect]
+fixture.dm, line 28, column 11:
+hint: redefining proc /mob/later [redefined_proc]
+- 26:16: previous definition is here

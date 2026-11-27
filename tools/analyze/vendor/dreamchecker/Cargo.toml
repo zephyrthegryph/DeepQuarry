@@ -12,4 +12,6 @@ path = "src/lib.rs"
 # Output and environment per request (dmbc daemon hosting): hostio/src/lib.rs.
 dq-hostio = { path = "../../hostio" }
 dreammaker = { path = "../dreammaker" }
+# The compiler front end's typed statements, which the native checker (src/native) reads.
+dm-syntax = { path = "../../../dmb/crates/dm-syntax" }
 foldhash = "0.2.0"

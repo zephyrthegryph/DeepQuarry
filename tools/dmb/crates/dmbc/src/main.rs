@@ -58,6 +58,8 @@ fn exit_code(code: std::process::ExitCode) -> i32 {
 fn main_inner() {
     // Analysis inside the compiler may take its model from this front end (`DQ_ANALYZE_PARSE=dmbc`).
     dmbc::analysis_tree::register_analysis_provider();
+    // `analyze dreamchecker` checks this front end's own tree (dreamchecker::native).
+    dmbc::dreamchecker_input::register_native_checker();
     if analyze_alias() && std::env::args().nth(1).as_deref() != Some("--serve-daemon") {
         run_analyze_alias();
     }

@@ -103,7 +103,7 @@ struct BaseVars;
 /// A var that can produce a site: not free of instance cost, not kept by `ALLOW(base_vars)`, and
 /// either on a base type (`base`) or an `= list()` candidate for `list_init` (`cand`: the instance
 /// list rule's own exemptions that depend only on the file and the type are already applied).
-#[derive(Serialize, Deserialize, PartialEq)]
+#[derive(Clone, Serialize, Deserialize, PartialEq)]
 struct RVar {
     owner: String,
     /// The var's name: with `owner` it is the declaration identity the baseline row stores (`owner::name`).
@@ -116,7 +116,7 @@ struct RVar {
 /// One file's contribution: every owner it declares a var for with its first var's line, the vars
 /// that can matter (in the schema's order: owners by first line, vars in file order), and the types
 /// its `GLOBAL_DATUM_INIT`s make singletons.
-#[derive(Serialize, Deserialize, Default, PartialEq)]
+#[derive(Clone, Serialize, Deserialize, Default, PartialEq)]
 struct Facts {
     owners: Vec<(String, u32)>,
     vars: Vec<RVar>,
@@ -225,7 +225,7 @@ fn facts_of(f: &SourceFile, exempt_prefixes: &[String], exempt_files: &[String],
 }
 
 /// A var a type declares, from the model: `(file, line, owner, on a base type, an `= list()` candidate)`.
-#[derive(Serialize, Deserialize, PartialEq)]
+#[derive(Clone, Serialize, Deserialize, PartialEq)]
 struct TypedVar {
     rel: String,
     line: u32,

@@ -25,24 +25,24 @@ use std::sync::Arc;
 
 /// What a declaration item spells: its header (expanded text) and where it starts.
 #[derive(Clone)]
-struct Spelled {
-    header: String,
-    at: usize,
+pub(crate) struct Spelled {
+    pub(crate) header: String,
+    pub(crate) at: usize,
     /// From `at` to the end of the item (its body included).
-    item_len: usize,
+    pub(crate) item_len: usize,
     /// The end of the header in the expanded text (the header string itself may be respelled on one line).
-    header_end: usize,
+    pub(crate) header_end: usize,
 }
 
 #[derive(Clone, Copy, PartialEq, Eq, Hash, PartialOrd, Ord, Debug)]
-enum Slot {
+pub(crate) enum Slot {
     VarDeclare,
     VarOverride,
     Proc,
     Verb,
 }
 
-type Key = (String, String, Slot);
+pub(crate) type Key = (String, String, Slot);
 
 fn absolute(owner: &str, path: &str) -> String {
     let path = path.trim_end_matches('/');
@@ -58,7 +58,7 @@ fn absolute(owner: &str, path: &str) -> String {
 }
 
 /// `(before, arguments, after)` of a proc header: the first top-level parenthesis group.
-fn signature_parts(header: &str) -> Option<(&str, &str, &str)> {
+pub(crate) fn signature_parts(header: &str) -> Option<(&str, &str, &str)> {
     let mut open = None;
     let mut depth = 0usize;
     for token in dm_syntax::lex(header).tokens {
@@ -83,20 +83,20 @@ fn signature_parts(header: &str) -> Option<(&str, &str, &str)> {
 }
 
 /// A var header's owner, name, declared type pieces (flags removed) and initializer text, the way dm-tree's adapter reads it.
-struct VarHeader<'h> {
+pub(crate) struct VarHeader<'h> {
     owner: String,
     name: String,
-    type_parts: Vec<String>,
+    pub(crate) type_parts: Vec<String>,
     initializer: Option<(&'h str, usize)>,
     /// `var/x as text` (no initializer): the declared input type.
     input: Option<InputType>,
     /// The `new /list(...)` a list suffix stands for when no value is written.
     suffix_initializer: Option<String>,
     /// The SpacemanDMM flags the spelling names.
-    spaceman: VarTypeFlags,
+    pub(crate) spaceman: VarTypeFlags,
 }
 
-fn var_header<'h>(owner: &str, header: &'h str) -> Option<VarHeader<'h>> {
+pub(crate) fn var_header<'h>(owner: &str, header: &'h str) -> Option<VarHeader<'h>> {
     let (declaration, initializer) = match dm_syntax::top_level_assignment_index(header) {
         Some(index) => {
             let rest = &header[index + 1..];
@@ -226,8 +226,27 @@ fn walk<'a>(
     }
 }
 
+/// The source line `offset` maps to, without its line break.
+pub(crate) fn source_line<'f>(frontend: &'f ColdFrontend, offset: usize, files: &mut HashMap<Arc<str>, usize>) -> Option<&'f str> {
+    let (path, line, _) = frontend.debug_site_column(offset)?;
+    if files.is_empty() {
+        for (i, f) in frontend.files.iter().enumerate() {
+            files.insert(Arc::from(f.path.to_string_lossy().as_ref()), i);
+        }
+    }
+    let file = frontend.files.get(*files.get(&path).or_else(|| {
+        let p = Path::new(&*path);
+        files.iter().find(|(k, _)| Path::new(&**k as &str).ends_with(p)).map(|(_, v)| v)
+    })?)?;
+    let text = file.text.as_str();
+    let start = *file.line_starts.get(line.checked_sub(1)?)?;
+    let rest = &text[start.min(text.len())..];
+    let len = rest.find('\n').unwrap_or(rest.len());
+    Some(rest[..len].strip_suffix('\r').unwrap_or(&rest[..len]))
+}
+
 /// The column one past the end of the source line `offset` maps to (its comments included), as dreammaker's newline token sits.
-fn line_end_column(frontend: &ColdFrontend, offset: usize, files: &mut HashMap<Arc<str>, usize>) -> Option<u16> {
+pub(crate) fn line_end_column(frontend: &ColdFrontend, offset: usize, files: &mut HashMap<Arc<str>, usize>) -> Option<u16> {
     let (path, line, _) = frontend.debug_site_column(offset)?;
     if files.is_empty() {
         for (i, f) in frontend.files.iter().enumerate() {
@@ -244,6 +263,26 @@ fn line_end_column(frontend: &ColdFrontend, offset: usize, files: &mut HashMap<A
     let len = rest.find('\n').unwrap_or(rest.len());
     let len = rest[..len].strip_suffix('\r').map_or(len, str::len);
     Some((len + 1).min(u16::MAX as usize) as u16)
+}
+
+/// A body's location mapper with the source line map: [`analysis_bridge::Locate::line_end`] reads a line's length from its source.
+struct Site<'a> {
+    locate: Box<dyn FnMut(usize) -> Location + 'a>,
+    frontend: &'a ColdFrontend,
+    line_files: HashMap<Arc<str>, usize>,
+}
+
+impl analysis_bridge::Locate for Site<'_> {
+    fn locate(&mut self, offset: usize) -> Location {
+        (self.locate)(offset)
+    }
+    fn line_end(&mut self, offset: usize) -> Location {
+        let at = (self.locate)(offset);
+        match line_end_column(self.frontend, offset, &mut self.line_files) {
+            Some(column) if at.line != 0 => Location { column, ..at },
+            _ => at,
+        }
+    }
 }
 
 /// Re-parse `text` (at expanded offset `at`) with dm-syntax and convert it.
@@ -294,7 +333,7 @@ fn specified(text: &str, at: usize, locate: &mut dyn FnMut(usize) -> Location, f
     out
 }
 
-fn var_flags(bits: u32) -> VarTypeFlags {
+pub(crate) fn var_flags(bits: u32) -> VarTypeFlags {
     let mut flags = VarTypeFlags::default();
     if bits & (1 | 8) != 0 {
         flags |= VarTypeFlags::STATIC;
@@ -387,7 +426,7 @@ pub struct FeedStats {
 pub type Locator<'a> = dyn Fn() -> Box<dyn FnMut(usize) -> Location + 'a> + Sync + 'a;
 
 /// What one declaration contributes to the tree, computed away from the builder so the work runs on many threads.
-#[derive(PartialEq, serde::Serialize, serde::Deserialize)]
+#[derive(Clone, PartialEq, serde::Serialize, serde::Deserialize)]
 enum Prepared {
     Var { location: Location, type_parts: Vec<String>, value: Option<Expression>, input: Option<InputType>, spaceman: VarTypeFlags },
     Override { location: Location, value: Option<Expression> },
@@ -407,27 +446,81 @@ pub struct CacheKeys {
 }
 
 /// One converted declaration as it is remembered.
-#[derive(Default, PartialEq, serde::Serialize, serde::Deserialize)]
+#[derive(Clone, Default, PartialEq, serde::Serialize, serde::Deserialize)]
 struct DeclarationResult {
     prepared: Option<Prepared>,
     failures: usize,
 }
 
 /// One converted body as it is remembered.
-#[derive(Default, PartialEq, serde::Serialize, serde::Deserialize)]
+#[derive(Clone, Default, PartialEq, serde::Serialize, serde::Deserialize)]
 struct BodyResult {
     block: Option<Block>,
     error: Option<(Location, String)>,
 }
 
 /// A declaration of the semantic tree with the spelling matched to it.
-struct Item<'t> {
-    id: dm_tree::MemberId,
-    owner: String,
-    name: String,
-    slot: Slot,
-    member: &'t dm_tree::MemberNode,
-    spelling: Option<Spelled>,
+pub(crate) struct Item<'t> {
+    pub(crate) id: dm_tree::MemberId,
+    pub(crate) owner: String,
+    pub(crate) name: String,
+    pub(crate) slot: Slot,
+    pub(crate) member: &'t dm_tree::MemberNode,
+    pub(crate) spelling: Option<Spelled>,
+}
+
+/// The semantic tree's declarations with the spelling of each matched to it, the place each type path is first written, and the
+/// spellings no declaration took (`parent_type = /x`, which the semantic tree holds as the type's parent).
+pub(crate) struct Matched<'t> {
+    pub(crate) items: Vec<Item<'t>>,
+    pub(crate) type_sites: HashMap<String, usize>,
+    pub(crate) spelled: HashMap<Key, VecDeque<Spelled>>,
+}
+
+/// Match each declaration of the semantic tree with its spelling (in declaration order: a queue per key).
+pub(crate) fn matched<'f>(frontend: &'f ColdFrontend, stats: &mut FeedStats) -> Matched<'f> {
+    let mut spelled: HashMap<Key, VecDeque<Spelled>> = HashMap::new();
+    let mut type_sites: HashMap<String, usize> = HashMap::new();
+    let mut starts: Vec<usize> = Vec::new();
+    for chunk in frontend.syntax.chunks().iter() {
+        walk(chunk.items(), "/", &mut spelled, &mut type_sites, &mut starts);
+    }
+    let tree = &frontend.snapshot.tree;
+    let symbols = tree.symbols();
+    let text = |id| symbols.text(id).unwrap_or("").to_owned();
+    let mut items: Vec<Item<'_>> = Vec::new();
+    for target in tree.declarations() {
+        let Target::Member(id) = *target else { continue };
+        let Some(member) = tree.member(id) else { continue };
+        let Some(owner) = tree.type_node(member.owner) else { continue };
+        let owner = text(owner.path);
+        let name = text(member.name);
+        let slot = match (member.kind, member.definition) {
+            (MemberKind::Var, DefinitionMode::Declare) => Slot::VarDeclare,
+            (MemberKind::Var, _) => Slot::VarOverride,
+            (MemberKind::Proc, _) => Slot::Proc,
+            (MemberKind::Verb, _) => Slot::Verb,
+        };
+        // An override spells no `verb/` or `proc/` marker (`/mob/living/pointed()` overrides a verb), so either slot holds it.
+        let alternate = match slot {
+            Slot::Proc => Some(Slot::Verb),
+            Slot::Verb => Some(Slot::Proc),
+            _ => None,
+        };
+        let spelling = spelled.get_mut(&(owner.clone(), name.clone(), slot)).and_then(VecDeque::pop_front).or_else(|| {
+            let alternate = alternate?;
+            spelled.get_mut(&(owner.clone(), name.clone(), alternate)).and_then(VecDeque::pop_front)
+        });
+        if spelling.is_none() {
+            stats.missing_spelling += 1;
+            if std::env::var_os("DQ_TREE_DEBUG_MISSING").is_some() {
+                let near: Vec<_> = spelled.iter().filter(|(k, _)| k.1 == name).map(|(k, v)| (k.0.clone(), k.2, v.len())).collect();
+                eprintln!("missing spelling: {owner:?} {name:?} {slot:?} near {near:?}");
+            }
+        }
+        items.push(Item { id, owner, name, slot, member, spelling });
+    }
+    Matched { items, type_sites, spelled }
 }
 
 /// One worker's state.
@@ -475,6 +568,11 @@ fn prepare(frontend: &ColdFrontend, w: &mut Worker<'_>, item: &Item<'_>, failure
                 let lead = rest.len() - rest.trim_start().len();
                 expression(rest.trim(), s.at + index + 1 + lead, locate, failures)
             });
+            // dreammaker places an override at the token after its name: the `=`.
+            let location = match spelling.as_ref().and_then(|s| Some(s.at + dm_syntax::top_level_assignment_index(&s.header)?)) {
+                Some(at) => locate(at),
+                None => location,
+            };
             Prepared::Override { location, value }
         }
         Slot::Proc | Slot::Verb => {
@@ -523,15 +621,9 @@ pub fn build_tree_in(context: &dreammaker::Context, frontend: &ColdFrontend, loc
         }
     };
     let mut stats = FeedStats::default();
-    let mut spelled: HashMap<Key, VecDeque<Spelled>> = HashMap::new();
-    let mut type_sites: HashMap<String, usize> = HashMap::new();
-    let mut starts: Vec<usize> = Vec::new();
     let t = std::time::Instant::now();
-    for chunk in frontend.syntax.chunks().iter() {
-        walk(chunk.items(), "/", &mut spelled, &mut type_sites, &mut starts);
-    }
-    starts.sort_unstable();
-    phase("spelling", t);
+    let Matched { items, type_sites, mut spelled } = matched(frontend, &mut stats);
+    phase("spelling and matching", t);
 
     // Converted bodies by member, on every core, each remembered by what decides it: its expanded text, where it sits in its file, that
     // file's bytes (the line map reads them) and the file ids. An edit converts the bodies of the edited files again; the rest are read.
@@ -554,16 +646,16 @@ pub fn build_tree_in(context: &dreammaker::Context, frontend: &ColdFrontend, loc
         })
         .collect();
     let convert = |i: usize| {
-        let mut locate = locator();
+        let mut site = Site { locate: locator(), frontend, line_files: HashMap::new() };
         let Ok(body) = arena.take_parsed(&frontend.bodies[i]) else { return BodyResult::default() };
         let Some(statements) = body.statement_body() else { return BodyResult::default() };
-        match analysis_bridge::convert_body_checked(&statements.parsed().statements, &mut |o: usize| locate(o)) {
+        match analysis_bridge::convert_body_checked(&statements.parsed().statements, &mut site, expanded) {
             Ok(block) => BodyResult { block: Some(block), error: None },
             Err(error) => BodyResult { block: None, error: Some(error) },
         }
     };
     let results: Vec<BodyResult> = if keys.enabled {
-        dq_analyze::incr::keyed_by("tree-bodies", dq_analyze::incr::ctx_key("tree-bodies-v1"), &body_keys, convert)
+        dq_analyze::incr::keyed_by("tree-bodies", dq_analyze::incr::ctx_key("tree-bodies-v2"), &body_keys, convert)
     } else {
         (0..frontend.bodies.len()).into_par_iter().map(convert).collect()
     };
@@ -595,41 +687,6 @@ pub fn build_tree_in(context: &dreammaker::Context, frontend: &ColdFrontend, loc
     }
     phase("types", t);
 
-    // Match each declaration with its spelling (in declaration order: a queue per key).
-    let t = std::time::Instant::now();
-    let mut items: Vec<Item<'_>> = Vec::new();
-    for target in tree.declarations() {
-        let Target::Member(id) = *target else { continue };
-        let Some(member) = tree.member(id) else { continue };
-        let Some(owner) = tree.type_node(member.owner) else { continue };
-        let owner = text(owner.path);
-        let name = text(member.name);
-        let slot = match (member.kind, member.definition) {
-            (MemberKind::Var, DefinitionMode::Declare) => Slot::VarDeclare,
-            (MemberKind::Var, _) => Slot::VarOverride,
-            (MemberKind::Proc, _) => Slot::Proc,
-            (MemberKind::Verb, _) => Slot::Verb,
-        };
-        // An override spells no `verb/` or `proc/` marker (`/mob/living/pointed()` overrides a verb), so either slot holds it.
-        let alternate = match slot {
-            Slot::Proc => Some(Slot::Verb),
-            Slot::Verb => Some(Slot::Proc),
-            _ => None,
-        };
-        let spelling = spelled.get_mut(&(owner.clone(), name.clone(), slot)).and_then(VecDeque::pop_front).or_else(|| {
-            let alternate = alternate?;
-            spelled.get_mut(&(owner.clone(), name.clone(), alternate)).and_then(VecDeque::pop_front)
-        });
-        if spelling.is_none() {
-            stats.missing_spelling += 1;
-            if std::env::var_os("DQ_TREE_DEBUG_MISSING").is_some() {
-                let near: Vec<_> = spelled.iter().filter(|(k, _)| k.1 == name).map(|(k, v)| (k.0.clone(), k.2, v.len())).collect();
-                eprintln!("missing spelling: {owner:?} {name:?} {slot:?} near {near:?}");
-            }
-        }
-        items.push(Item { id, owner, name, slot, member, spelling });
-    }
-    phase("matching", t);
 
     // Each declaration's initializer, parameters and locations, on every core.
     let t = std::time::Instant::now();
@@ -664,7 +721,7 @@ pub fn build_tree_in(context: &dreammaker::Context, frontend: &ColdFrontend, loc
                 },
             )
             .collect();
-        dq_analyze::incr::keyed_by("tree-declarations", dq_analyze::incr::ctx_key("tree-declarations-v1"), &decl_keys, |i| {
+        dq_analyze::incr::keyed_by("tree-declarations", dq_analyze::incr::ctx_key("tree-declarations-v2"), &decl_keys, |i| {
             let mut w = Worker { locate: locator(), line_files: HashMap::new() };
             compute(&mut w, &items[i])
         })
@@ -720,7 +777,7 @@ pub fn build_tree_in(context: &dreammaker::Context, frontend: &ColdFrontend, loc
             let lead = rest.len() - rest.trim_start().len();
             if let Some(value) = expression(rest.trim(), s.at + index + 1 + lead, &mut *locate, &mut stats.expression_failures) {
                 stats.vars += 1;
-                builder.add_var_override(ty, "parent_type", locate(s.at), value);
+                builder.add_var_override(ty, "parent_type", locate(s.at + index), value);
             }
         }
     }
@@ -961,7 +1018,7 @@ pub fn run(dme: &Path) -> Result<(), Box<dyn std::error::Error>> {
 /// and `macro undefined while not defined` (an `#undef` of a name that is not). The plan's regions carry their active `#define` /
 /// `#undef` effects in order; each is placed at its directive's name, the next matching directive line of the region's source.
 /// `initial`: the names defined before the first file (the predefines and the caller's defines).
-fn macro_warnings(
+pub(crate) fn macro_warnings(
     frontend: &dm_tree::frontend::ColdFrontend,
     initial: impl IntoIterator<Item = String>,
     place: &mut dyn FnMut(&str, usize, usize) -> Location,
@@ -1046,7 +1103,59 @@ fn macro_warnings(
 /// preprocessor registers includes, in the order the tree first names them; locations carry the line (dmbc keeps no column).
 /// `checker`: DreamChecker's parse; its diagnostics are what finishing the tree registers (the parser's own syntax diagnostics have no
 /// counterpart: dmbc's front end reports its own, and refuses a tree it cannot build).
-pub fn parse_for_analysis(dme: &Path, checker: bool) -> Result<dq_analyze::sem::model_store::Parsed, String> {
+/// The compiler's front end of a `.dme` as analysis reads it, with its files registered for SpacemanDMM-style locations.
+pub(crate) struct Front {
+    pub(crate) frontend: dm_tree::frontend::FrontendRevision,
+    /// The files under the ids locations carry: the `.dme` first, then every file in include order.
+    pub(crate) files_ctx: dreammaker::Context,
+    pub(crate) ids: HashMap<Arc<str>, dreammaker::FileId>,
+    pub(crate) root: PathBuf,
+    pub(crate) root_abs: PathBuf,
+    /// The macros defined before the first file (a later `#define` of one is a redefinition).
+    pub(crate) initial: Vec<String>,
+    pub(crate) built: std::time::Duration,
+}
+
+impl Front {
+    /// A path as dreammaker's preprocessor registers an include: relative to the `.dme`'s directory.
+    pub(crate) fn registered(&self, path: &str) -> PathBuf {
+        registered_in(&self.root, &self.root_abs, path)
+    }
+}
+
+fn registered_in(root: &Path, root_abs: &Path, path: &str) -> PathBuf {
+    let p = Path::new(path);
+    let abs = if p.is_absolute() { p.to_path_buf() } else { root.join(p) };
+    let abs = std::fs::canonicalize(&abs).unwrap_or(abs);
+    match abs.strip_prefix(root_abs) {
+        Ok(rel) => PathBuf::from(rel.to_string_lossy().replace('\\', "/")),
+        Err(_) => abs,
+    }
+}
+
+/// An expanded offset's location through `mapper`: dreammaker's file ids (`ids`), the line and column dreammaker gives the token.
+pub(crate) fn locate_in(
+    ids: &HashMap<Arc<str>, dreammaker::FileId>,
+    mapper: &dm_tree::frontend::SiteMapper<'_>,
+    offset: usize,
+    unregistered: &std::sync::atomic::AtomicUsize,
+) -> Location {
+    {
+        match mapper.debug_site_column(offset) {
+            Some((path, line, column)) => match ids.get(&path) {
+                Some(&file) => Location { file, line: line as u32, column: column.min(u16::MAX as usize) as u16 },
+                None => {
+                    unregistered.fetch_add(1, std::sync::atomic::Ordering::Relaxed);
+                    Location::builtins()
+                }
+            },
+            None => Location::builtins(),
+        }
+    }
+}
+
+/// The front end of `dme` as analysis reads it: `SPACEMAN_DMM` defined, from the daemon's retained session when there is one.
+pub(crate) fn front(dme: &Path) -> Result<Front, String> {
     let started = std::time::Instant::now();
     // dq-analyze reads the tree as SpacemanDMM tools do: `SPACEMAN_DMM` is defined (code under `#if defined(SPACEMAN_DMM)`, the
     // test fixtures among it, is part of the model).
@@ -1071,6 +1180,21 @@ pub fn parse_for_analysis(dme: &Path, checker: bool) -> Result<dq_analyze::sem::
     let files_ctx = dreammaker::Context::default();
     // The .dme is the preprocessor's first file.
     files_ctx.register_file(Path::new(dme.file_name().unwrap_or(dme.as_os_str())));
+    // Files are registered up front, in include order (as dreammaker's preprocessor names them), so every worker thread maps a path
+    // to its id with a plain read.
+    let canonical: Vec<PathBuf> = {
+        use rayon::prelude::*;
+        frontend.plan.occurrences.par_iter().map(|o| registered_in(&root, &root_abs, &o.semantic_path)).collect()
+    };
+    let mut ids: HashMap<Arc<str>, dreammaker::FileId> = HashMap::new();
+    for (occurrence, path) in frontend.plan.occurrences.iter().zip(&canonical) {
+        ids.entry(occurrence.semantic_path.clone()).or_insert_with(|| files_ctx.register_file(path));
+    }
+    Ok(Front { frontend, files_ctx, ids, root, root_abs, initial, built })
+}
+
+pub fn parse_for_analysis(dme: &Path, checker: bool) -> Result<dq_analyze::sem::model_store::Parsed, String> {
+    let Front { frontend, files_ctx, mut ids, initial, built, root, root_abs } = front(dme)?;
     let registered = |path: &str| -> PathBuf {
         let p = Path::new(path);
         let abs = if p.is_absolute() { p.to_path_buf() } else { root.join(p) };
@@ -1080,16 +1204,6 @@ pub fn parse_for_analysis(dme: &Path, checker: bool) -> Result<dq_analyze::sem::
             Err(_) => abs,
         }
     };
-    // Files are registered up front, in include order (as dreammaker's preprocessor names them), so every worker thread maps a path
-    // to its id with a plain read.
-    let mut ids: HashMap<Arc<str>, dreammaker::FileId> = HashMap::new();
-    let canonical: Vec<PathBuf> = {
-        use rayon::prelude::*;
-        frontend.plan.occurrences.par_iter().map(|o| registered(&o.semantic_path)).collect()
-    };
-    for (occurrence, path) in frontend.plan.occurrences.iter().zip(&canonical) {
-        ids.entry(occurrence.semantic_path.clone()).or_insert_with(|| files_ctx.register_file(path));
-    }
     // What a remembered conversion depends on besides its own text: the files paths and bytes, and the ids the locations carry.
     let cache_keys = {
         use rayon::prelude::*;

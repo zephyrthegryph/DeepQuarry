@@ -104,7 +104,7 @@ pub fn call_sites(sem: &Sem, names: &[&str]) -> Vec<(String, u32, String)> {
 /// everything. Results come in path order.
 pub fn per_file<R>(sem: &Sem, name: &str, f: impl Fn(&str, &[(String, &dreammaker::objtree::ProcValue)]) -> R + Sync) -> Vec<R>
 where
-    R: serde::Serialize + serde::de::DeserializeOwned + Default + PartialEq + Send,
+    R: serde::Serialize + serde::de::DeserializeOwned + Default + PartialEq + Clone + Send + Sync + 'static,
 {
     use std::collections::BTreeMap;
     let mut by_file: BTreeMap<String, (u128, Vec<(String, &dreammaker::objtree::ProcValue)>)> = BTreeMap::new();

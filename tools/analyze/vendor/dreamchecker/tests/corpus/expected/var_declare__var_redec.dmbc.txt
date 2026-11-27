@@ -1,0 +1,1 @@
+parse refused: front end failed: 2 diagnostic(s), first: Some("foo: duplicate definition")

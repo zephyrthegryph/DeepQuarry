@@ -1249,7 +1249,7 @@ fn param_candidates(sem: &Sem, refs: &[ProcRef]) -> ParamCandidates {
 
 /// What one file's bodies name, for [`param_candidates`]: literal texts assigned to a name, names a dynamic call spells, names whose
 /// value reaches a dynamic call, and the procs a type path literal refers to.
-#[derive(Default, PartialEq, serde::Serialize, serde::Deserialize)]
+#[derive(Clone, Default, PartialEq, serde::Serialize, serde::Deserialize)]
 struct BodyNames {
     texts: Vec<(String, String)>,
     named: Vec<String>,

@@ -1,0 +1,2 @@
+fixture.dm, line 2, column 14:
+error: got 'in', expected one of: operator, field access, ':'

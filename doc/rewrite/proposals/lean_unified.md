@@ -273,3 +273,130 @@ dreammaker's cold and warm output in `plans.dm` (about 2000 `CGK_*` keys and the
 vars). The dmbc run's own `gen --check plans` with a fresh cache then reports that `plans.dm` stale. So inside a cold dmbc `gen`, a stage-1
 result is computed from state that no longer matches its inputs. dreammaker's cold `gen` (caches and the gen store off) matches its warm
 output exactly. Not yet re-checked after 6b7ead2416.
+## 2b DREAMCHECKER: the checker on dmbc's own tree (2026-11-27, branch `compiler/dreamchecker-native`)
+
+### What landed
+
+- **Oracle.** `tools/analyze/vendor/dreamchecker/tests/corpus`: 62 cases (the vendored crate's 55 test snippets, extracted, plus 7 seeded files
+  that make every other diagnostic kind fire: control flow, settings and directives, static types and fields, sleep and purity call trees,
+  filters, keyword arguments, BYOND constants). `expected/<case>.txt` is every diagnostic on dreammaker's parse, every severity, with line,
+  column, error type and notes (`dq_analyze::dreamchecker::render`); the extracted ones agree with the old tests' (line, column, text) lists
+  except where the old harness parsed a buffer instead of a `.dme` (end-of-file token places). `tools/analyze/tests/dreamchecker_corpus.rs`
+  runs both checkers, serial and on three threads (one body per batch). The intended differences (13 cases, every one a parse: dreammaker's
+  grammar, or a tree BYOND refuses) are `expected/<case>.dmbc.txt`, with the reasons in the corpus `README.md`.
+- **Native checker.** `dreamchecker::native` (vendored crate, `src/native/`): DreamChecker's passes (var definitions, settings, bodies,
+  override validity, call tree) over its own model of BYOND types (`model.rs`: the builtins as SpacemanDMM knows them, `builtins.txt`, dumped
+  from dreammaker's table and checked against it by `tests/builtins_dump.rs`; the project's declarations registered by dreammaker's rules)
+  and the front end's typed statements (`dm_syntax::Statement`/`Expr`, read in SpacemanDMM's terms by `view.rs`). dmbc builds the input
+  (`dmbc/src/dreamchecker_input.rs`, from `analysis_tree::matched` and `front`); no dreammaker tree or AST is built for it. What it still
+  uses of the `dreammaker` crate: `Context`, `DMError`, `Location`, `Severity` (the output) and `FormatFloat`/`Quote` (two messages' spelling).
+- **Places.** A place is a `Where` (an offset, a line end, a declaration end, or a location) and is located only when a diagnostic prints it:
+  locating was most of the cost (model 60 s and bodies 11 s eager; about 2 s each lazy). Fixed at the source so columns match dreammaker:
+  a condition sits at its `(` (`dm_syntax::control_open_paren`), a switch case where its block ends, an override at its `=`, a token of a
+  function-like macro's argument at the invocation (`dm-tree` `debug_site_column`; it had placed it at the argument), a var a macro declares
+  at the invocation. The converted tree (`analysis_bridge`, `analysis_tree`) got the first four too.
+- **BYOND constants.** dmbc predefines `NORTH`, `WAVE_SIDEWAYS`, `FLOAT_LAYER` as macros; dreammaker reads them as global vars. An expression
+  that is exactly the expansion of such a macro written in the source, or of a macro whose expansion is only one of them, is read as the
+  constant's name (`dm-tree` `SiteMapper::invocation_output`, new: it aligns a row's invocations with its output by the text copied between
+  them). Constants dreammaker also defines as macros (`TRUE`, `FALSE`) stay values, as dreammaker sees them. The filter, condition, range
+  and static-term checks then give dreammaker's diagnostics (corpus `seed__filters`, `seed__builtin_constants`). Left as a value: a constant
+  inside a larger macro's replacement (dreammaker sees the name); nothing in the corpus or the tree reads one there.
+- `DQ_DREAMCHECKER_NATIVE=1` selects the native checker in `analyze dreamchecker` while it is proved and made fast (below); the default is
+  still the checker on dreammaker's parse.
+
+### Proof
+
+- Corpus: every case passes on both checkers (49 identical to dreammaker, 13 intended differences).
+- Whole tree (`analyze dreamchecker --json` in a worktree with its generated files, whose unit-test fixtures fire 131 diagnostics), and the
+  same tree plus a seeded file (17 more diagnostics of 12 kinds: unreachable code, determinate conditions, a bad range, `NORTH` as a condition
+  and as filter flags, `||` in a case, `!x & 1`, static-type fields and calls, a private var, keyword arguments, sleep and purity call trees):
+  every DreamChecker diagnostic identical (line, column, text, notes, order). The three other differences are dreammaker's own parse, not
+  checks: a parse error at `new L[1](...)` (`code/tests/benchmarks/map_plan_cost.dm:49`, a form BYOND accepts) and two constant-evaluation
+  errors of dreammaker's tree finish (`unknown variable: GAS_ID_CHLORINE` and `GAS_ID_AMMONIA`, `code/domains/atmos/methane_and_fuel_gases.dm`,
+  which BYOND compiles). So natively `Found 131 diagnostics` is 128, the hint count is 390 (the known `#define` doc hints), and include paths
+  are canonical (`code/tests/unit_tests/x.dm` where dreammaker keeps the include's `unit_tests\x.dm`).
+
+### Step 3 shape (for the ENGINE workstream)
+
+Per-proc results are pure functions with stable identities (`model::ProcId`: type, proc slot, definition index):
+
+- `native::settings_of(model, settings, context, site, proc, body)`: a proc's declared return type, final flag and leading `set` statements.
+  Reads only its own declaration and leading statements.
+- `native::body_facts(input, shared, site, proc) -> walk::ProcFacts`: one body's diagnostics, calls (callee, place, new context), blocking
+  and impure operations, `waitfor`, keyword arguments. Reads its body, the model and the settings table (`walk::Shared`), nothing else.
+- The rest of `native::run` folds the facts in source order and runs the override and call-tree passes (`CallTables`) over them only.
+
+An edit then needs the model (rebuilt from the semantic tree, about 2 s, or spliced), the settings of the edited procs, and the body facts of
+the procs whose body or read declarations changed; the call-tree pass reruns over the kept facts (under a second).
+
+### Measured (single runs on a heavily shared machine; numbers swing 2-4x between runs)
+
+| What | dreammaker parse (default) | native |
+|---|---|---|
+| whole tree, standalone, cold | 8.2-11.9 s | 23-35 s: the compiler front end 15-28 s (its own cold cost), input 3-8 s (matching 1-2.5 s, body parse 2-3 s, model 1.4-2 s), checks 2.5-8 s |
+| whole tree through the daemon, warm | (no daemon path) | 22 s: front end 4.3 s (retained session), input 4.3 s, checks 3 s, the rest request overhead |
+
+So the native checker is not yet the only path: cold it pays the compiler's front end, and warm the daemon still rebuilds the input on each
+request. Next, in this order: keep the input (model, parsed bodies) per front end revision in the daemon; per-proc facts as dm-query queries
+(ENGINE); then make it the only path and delete `lib.rs`'s checker on dreammaker's tree, its tests and `DQ_DREAMCHECKER_NATIVE`.
+
+**For LINTS (2a):** the checker no longer needs the converted tree: the native checker reads dmbc's tree, and the default one reads dreammaker's
+parse, never `DQ_ANALYZE_PARSE=dmbc`. The native input reuses `analysis_tree::{matched, front, Front, var_header, signature_parts,
+line_end_column, source_line, locate_in, macro_warnings}`: keep them (or move them beside `dreamchecker_input.rs`) when the converter goes.
+
+## 1+3 ENGINE: analysis results as queries (2026-11-27, branch `compiler/analysis-queries`)
+
+### Increment 1: the answer is the top query; results as data
+
+- **Answers in dm-query.** The daemon keeps one `dm_query::Db` per project root (`dmbc/src/daemon/analysis_db.rs`). Its top query
+  `ANSWER(argv, cwd)` is a command's whole answer (exit code, report, stderr). It reads `TREE`, an input whose hash moves only when the
+  directory watcher (`fs_watch`, `changed_entries_since`) logged a change under the root that a command can read (everything but
+  `.dmbc`, `.git`, `data` and any `target` or `node_modules`; a lost event, another epoch or an uncovered root counts as a change), and
+  one `VAR(name)` per environment variable the run read (`dq_hostio::env_reads`; early cutoff: another shell whose other variables differ
+  stays green). A run that started a child command reads the whole environment. `dq_analyze::cli::rememberable` names what is asked
+  through it: `check` without `--changed-only`, `--timing`, `--no-cache`, `--rehash` or `DQ_ALLOW_USAGE` (an effect or an input outside
+  the root); the rest runs as before.
+- **dm-query `get_with`.** Kinds whose function each read supplies (`Db::define_local`): revalidated like any other; a dependant that
+  finds one red with no function at hand sees it missing and runs itself.
+- **Results as data.** `dq_analyze::report`: a check's stdout is `Report::render` of its report: per lint its text, its sites as
+  `Diagnostic`s (lint, rule, file, line, column (0 until lints report columns), message, severity: `Error` for a site the verdict counts,
+  `Baselined` for a legacy site its baseline admits, `Note` where the lint judges itself) and its allow uses. The daemon sends a remembered
+  answer as data (`Reply::AnalysisData`: the report and its revision) and the client renders it, the same bytes. `--json` prints the
+  report, `--file F` one file's diagnostics, `--since N` what changed since the report of revision N (the daemon keeps the last 16;
+  standalone has no history: revision 0, everything added). The view flags are not part of the answer's key.
+
+### Increment 2: incr on the query database, one persistence layer
+
+- `incr::facts/keyed/keyed_by/two_phase/cached` keep their signatures (result types gained `Clone`) and run on one `dm_query::Db` per
+  stamp, kept for the life of the process: every entry is named by what decides it (`ENTRY(store, context, content key)`,
+  `VALUE(store, key)`), computed by the caller's closure through `get_with`, and held decoded, so a hosted request reads unchanged results
+  without decoding them, and an entry is valid for every worktree the daemon serves.
+- Persistence is one layer for both paths: per-store slot files (`persist-*.bin`) with per-root leases and a byte budget
+  (`DQ_ANALYZE_STORE_BUDGET_MB`, 768): the worktree's `data/analyze-cache` standalone, `E:/dq-cache/analysis/<image>` in the daemon
+  (`[cache.analysis]`). A lint's per-file results and whole-tree memo are entries too (`lint:<name>|<version>`, `lint-tree:...`).
+- Deleted: incr's own disk stores (`incr-*.bin`, the sharded containers), `LintCache` and `lint-*.bin`, the daemon's byte store
+  (`daemon/analysis_store.rs`, its `Provider` trait).
+- Answers persist beside the slots (`answer-*.bin`) with a fingerprint of every file the watcher would report (path, size, mtime; taken
+  as the run starts) and the variables read, written only when the watcher saw no relevant change while the run went. `ANSWER`'s function
+  reads it first: a restarted daemon answers an unchanged request after one walk of the root.
+
+Not yet (what is left, in order): the context keys are still whole-index keys (a judge reruns on any fact change of its store; the
+fine-grained form needs judges to read index entries through a recording accessor, which changes lint bodies: the LINTS lane's port);
+the sem record, `value_procs`, the walks and `gen/deps` still validate per run (about 5 s of a body edit's 7 s: `gen/deps` 1.8 s,
+`value_procs` 1.7 s, the walk-cache validation, `sem/handlers` 0.8 s); the model store and walk store still decode from their own files
+after each request (prewarm).
+
+Measured (single runs; the machine was shared with three or four other lanes building, so edit timings are noisy):
+
+| What | master | this branch |
+|---|---|---|
+| nothing changed, in the daemon | 0.8-4.7 s | 46-101 ms (client process end to end 0.17-0.27 s) |
+| one-line body edit, then its revert | 6.0 / 6.6 s (82 s once, a cold model store) | 11.2 / 7.2 s with `DQ_ANALYZE_TRACE` on (13-19 s before increment 2) |
+| first request of a new daemon | 56-209 s | 112 s (loaded machine) |
+| restarted daemon, nothing changed | a full run (1.2 s with warm disk caches; minutes cold) | 0.57 s in the daemon (the answer read back after one walk of the root), 0.83 s end to end |
+
+Proof on this branch: `check --raw` and `check` byte-identical to master's standalone answer on master and on seeded trees (a one-line
+body edit, a new var, a new proc, a deleted file: daemon answers of increment 1 against master standalone, every pair identical); after
+increment 2 and the merge of master: daemon `check --raw`, standalone `check --raw` (cold and warm slots), `check` and `check --raw
+--no-cache` identical to master's; `gen` rewrites nothing; the analyze test suite (gate-test: 298 unit tests and the integration tests)
+passes; dm-query's tests (`get_with` included) and dmbc's `analysis_db` and `fs_watch` tests pass.

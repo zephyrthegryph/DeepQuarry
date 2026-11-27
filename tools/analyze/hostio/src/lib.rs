@@ -33,6 +33,9 @@ static SCOPE: RwLock<Option<Arc<Scope>>> = RwLock::new(None);
 static LOCAL: Mutex<Option<HashMap<String, Option<String>>>> = Mutex::new(None);
 /// Bumped whenever the environment a read would see may change, so values cached from it are computed again.
 static GENERATION: AtomicU64 = AtomicU64::new(0);
+/// Every variable a request read from its environment (not one it set for itself), with the value it saw: what a remembered
+/// answer to the same request depends on ([`env_reads`]).
+static READS: Mutex<Option<std::collections::BTreeMap<String, Option<String>>>> = Mutex::new(None);
 
 /// Runs `f` inside `scope`. One scope at a time: the caller serializes requests.
 pub fn with_scope<R>(scope: Scope, f: impl FnOnce() -> R) -> R {
@@ -40,12 +43,15 @@ pub fn with_scope<R>(scope: Scope, f: impl FnOnce() -> R) -> R {
     impl Drop for Reset {
         fn drop(&mut self) {
             *SCOPE.write().unwrap_or_else(|e| e.into_inner()) = None;
+            *READS.lock().unwrap_or_else(|e| e.into_inner()) = None;
             *LOCAL.lock().unwrap_or_else(|e| e.into_inner()) = None;
             GENERATION.fetch_add(1, Ordering::SeqCst);
         }
     }
     *SCOPE.write().unwrap_or_else(|e| e.into_inner()) = Some(Arc::new(scope));
     *LOCAL.lock().unwrap_or_else(|e| e.into_inner()) = Some(HashMap::new());
+    *READS.lock().unwrap_or_else(|e| e.into_inner()) = Some(Default::default());
+    SPAWNED.store(false, Ordering::SeqCst);
     GENERATION.fetch_add(1, Ordering::SeqCst);
     let _reset = Reset;
     f()
@@ -132,7 +138,40 @@ pub fn var_os(name: impl AsRef<std::ffi::OsStr>) -> Option<OsString> {
             return v.clone().map(OsString::from);
         }
     }
-    s.env.iter().find(|(k, _)| same_name(k, &key)).map(|(_, v)| OsString::from(v))
+    let value = s.env.iter().find(|(k, _)| same_name(k, &key)).map(|(_, v)| v.clone());
+    if let Some(reads) = READS.lock().unwrap_or_else(|e| e.into_inner()).as_mut() {
+        reads.entry(canonical_name(&key)).or_insert_with(|| value.clone());
+    }
+    value.map(OsString::from)
+}
+
+/// The variables this request has read from its environment so far, by canonical name (upper case on Windows), with the value
+/// each read saw (`None`: absent). Reads of a variable the request set or removed itself are not listed: they do not depend on the
+/// environment. Empty outside a request.
+pub fn env_reads() -> Vec<(String, Option<String>)> {
+    READS.lock().unwrap_or_else(|e| e.into_inner()).as_ref().map(|r| r.iter().map(|(k, v)| (k.clone(), v.clone())).collect()).unwrap_or_default()
+}
+
+/// Whether this request made a child command ([`command`]): its answer then depends on the child's whole environment, its other
+/// inputs and the time it ran, not only on what the request itself read.
+pub fn spawned_child() -> bool {
+    SPAWNED.load(Ordering::SeqCst)
+}
+
+static SPAWNED: std::sync::atomic::AtomicBool = std::sync::atomic::AtomicBool::new(false);
+
+/// The name a variable is compared by: as written, upper-cased where names ignore case (Windows).
+pub fn canonical_name(name: &str) -> String {
+    if cfg!(windows) {
+        name.to_ascii_uppercase()
+    } else {
+        name.to_string()
+    }
+}
+
+/// The value `name` has in `env` the way a read inside a request with that environment would see it (case-insensitive on Windows).
+pub fn lookup<'a>(env: &'a HashMap<String, String>, name: &str) -> Option<&'a String> {
+    env.iter().find(|(k, _)| same_name(k, name)).map(|(_, v)| v)
 }
 
 /// `std::env::var`, of the request's environment when one is installed.
@@ -187,8 +226,10 @@ pub fn child_env() -> Option<Vec<(String, String)>> {
     Some(env)
 }
 
-/// A child command with the request's environment (inherits the process's when standalone).
+/// A child command with the request's environment (inherits the process's when standalone). A child reads what it likes, so the
+/// request now depends on more than [`env_reads`] lists ([`spawned_child`]).
 pub fn command(program: impl AsRef<std::ffi::OsStr>) -> std::process::Command {
+    SPAWNED.store(true, Ordering::SeqCst);
     let mut cmd = std::process::Command::new(program);
     if let Some(env) = child_env() {
         cmd.env_clear().envs(env);
@@ -254,6 +295,10 @@ mod tests {
             assert_eq!(var("DQ_HOSTIO_TEST").as_deref(), Ok("changed"));
             remove_var("DQ_HOSTIO_TEST");
             assert!(var_os("DQ_HOSTIO_TEST").is_none());
+            assert!(var("DQ_HOSTIO_ABSENT").is_err());
+            let reads = env_reads();
+            assert!(reads.iter().any(|(k, v)| k.eq_ignore_ascii_case("DQ_HOSTIO_TEST") && v.as_deref() == Some("inside")));
+            assert!(reads.iter().any(|(k, v)| k.eq_ignore_ascii_case("DQ_HOSTIO_ABSENT") && v.is_none()));
             out(true, format_args!("a{}", 1), true);
             out(false, format_args!("b"), false);
         });

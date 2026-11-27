@@ -1,0 +1,2 @@
+fixture.dm, line 2, column 5:
+error: proc has no parent: /mob/proc/test [proc_has_no_parent]
