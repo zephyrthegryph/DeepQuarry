@@ -478,3 +478,23 @@ What is left, and why it is not mechanical. The edit's remaining CPU is in judge
 `sem/handlers`, `gen/deps`, `untracked_inputs` and `setter_publishes` (walk results validated per run, consumers re-folded), ui_actions,
 stored_refs, the layering lints. Keeping those per file needs every body and declaration read recorded where it happens, on the model's
 accessors (the walk store already records `Proc`/`Var` reads for walks): that is the Sem API the LINTS lane is rewriting on dmbc's tree.
+
+### Workstream 4, stable member slots (2026-11-27, lane `compiler/stable-member-slots`)
+
+Detail: tools/dmb/doc/retained_frontend.md, "Stable member slots". A `MemberId` is a storage slot that never moves; declaration
+order is `SemanticTree::member_order()` (chunked; an insert copies one chunk). `DMB_MEMBER_SLOT_SHUFFLE` / `dmbc
+slot-shuffle-check` build trees with slots permuted and compare the analysis object tree, DreamChecker's input and the compile
+output: equal (and the readers that took slot order for declaration order were switched first). A splice that only adds or changes
+member rows keeps every slot (new members appended, type replay skipped), the dependency graph is updated instead of captured, and
+the callable roster survives a var-only splice; removals and type changes keep the renumbering path. Cold: the callable-anchor,
+local-shape and metadata-inheritance passes run per owner on every core (metadata depth by depth).
+
+Measured on a machine at 80-100 % CPU from other lanes (single runs): new var front end 2.0 s (round 2) -> 0.96-1.4 s, its tree
+phase 0.7-1.2 s -> 0.36-0.42 s (splice 0.56 -> 0.07-0.11, dependency capture 0.34 -> 0.05-0.07, callable roster 0.28 -> 0.002);
+new proc 2.2 s -> 1.3 s (the callable roster is still issued again for a new body: 0.26 s). What is left of a new var is not in the
+tree: declaration parsing 0.34-0.6 s (authored adoption and the symbol catalog after a declaration edit) and identity rows
+0.10-0.12 s (one hash over every row). Proof: hosted against cold in the same daemon (`dreamchecker --json`, native checker on the
+dmbc tree) identical over base, body, var, proc, line shift and reverts, with `DMB_FRONTEND_VERIFY=1` clean (graph, origins,
+bodies); compile: daemon and one-shot outputs byte-identical to the master compiler's at every step (a new var and a new proc
+differ from a cold compile only by the append patch's table order, exactly as on master); analysis-parity 1168027/1168027 and
+105882/105882.
