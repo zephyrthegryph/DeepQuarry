@@ -38,7 +38,6 @@ external_dependency	code/library/capabilities/membership.dm	var/datum/registry/r
 external_dependency	code/library/capabilities/membership.dm	var/datum/registry/registry = get_registry(id)
 external_dependency	code/library/capabilities/membership.dm	if(registry?.conditional && !skips_registry(id))
 external_dependency	code/library/capabilities/membership.dm	registry.add(src)
-external_dependency	code/library/capabilities/ui_actions.dm	if(host.ui_rights && !admin_require(user?.client, host.ui_rights, "[host.type]:[key]"))
 external_dependency	code/library/construction/transport.dm	return ChangeTurf(type)
 external_dependency	code/library/containers/admission_reads.dm	if(istype(thing, /obj/item/stack))
 external_dependency	code/library/containers/admission_reads.dm	var/obj/item/stack/S = thing
@@ -186,17 +185,6 @@ external_dependency	code/library/helpers/gender.dm	/obj/item/clothing/p_do(temp_
 external_dependency	code/library/helpers/gender.dm	/obj/item/clothing/p_s(temp_gender)
 external_dependency	code/library/helpers/gender.dm	/obj/item/clothing/p_es(temp_gender)
 external_dependency	code/library/helpers/gender.dm	/obj/item/clothing/p_themselves(temp_gender)
-external_dependency	code/library/helpers/gender.dm	/datum/mind/p_they(temp_gender)
-external_dependency	code/library/helpers/gender.dm	/datum/mind/p_their(temp_gender)
-external_dependency	code/library/helpers/gender.dm	/datum/mind/p_theirs(temp_gender)
-external_dependency	code/library/helpers/gender.dm	/datum/mind/p_them(capitalized, temp_gender)
-external_dependency	code/library/helpers/gender.dm	/datum/mind/p_have(temp_gender)
-external_dependency	code/library/helpers/gender.dm	/datum/mind/p_are(temp_gender)
-external_dependency	code/library/helpers/gender.dm	/datum/mind/p_were(temp_gender)
-external_dependency	code/library/helpers/gender.dm	/datum/mind/p_do(temp_gender)
-external_dependency	code/library/helpers/gender.dm	/datum/mind/p_s(temp_gender)
-external_dependency	code/library/helpers/gender.dm	/datum/mind/p_es(temp_gender)
-external_dependency	code/library/helpers/gender.dm	/datum/mind/p_themselves(temp_gender)
 external_dependency	code/library/helpers/icons/flatten.dm	/proc/get_flat_icon(appearance/appearancelike, dir, no_anim)
 external_dependency	code/library/helpers/icons/flatten.dm	var/list/appearance/gathered = list()
 external_dependency	code/library/helpers/icons/flatten.dm	var/appearance/copying
@@ -848,8 +836,6 @@ external_dependency	code/library/reagents/dose.dm	return target.get_organ(check_
 external_dependency	code/library/reagents/dose.dm	return target.get_organ(check_zone(hud_of(user)?.zone_sel?.selecting))
 external_dependency	code/library/reagents/dose.dm	return target.get_organ(check_zone(hud_of(user)?.zone_sel?.selecting))
 external_dependency	code/library/reagents/dose.dm	var/obj/item/organ/external/affecting = limb_aimed(A)
-external_dependency	code/library/reagents/dose.dm	return (!!target.can_inject(user, FALSE, hud_of(user)?.zone_sel?.selecting, pierce, INJECT_METHOD_NEEDLE, FALSE)) ? null : /datum/msg/dose/limb_covered
-external_dependency	code/library/reagents/dose.dm	return (!!target.can_inject(user, FALSE, hud_of(user)?.zone_sel?.selecting, pierce, INJECT_METHOD_NEEDLE, FALSE)) ? null : /datum/msg/dose/limb_covered
 external_dependency	code/library/reagents/dose.dm	var/obj/item/organ/external/affecting = limb_aimed(A)
 external_dependency	code/library/reagents/dose.dm	if(!affecting || !target.thick_skin_holds(affecting))
 external_dependency	code/library/reagents/dose.dm	var/obj/item/organ/external/affecting = limb_aimed(A)
@@ -909,7 +895,6 @@ external_dependency	code/library/reagents/needle.dm	return (!!target.get_organ(h
 external_dependency	code/library/reagents/needle.dm	return (!!target.get_organ(hud_of(user)?.zone_sel?.selecting)) ? null : /datum/msg/needle/limb_missing
 external_dependency	code/library/reagents/needle.dm	var/obj/item/organ/external/affected = limb_aimed(A)
 external_dependency	code/library/reagents/needle.dm	var/obj/item/organ/external/affected = limb_aimed(A)
-external_dependency	code/library/reagents/needle.dm	return (!!target.can_inject(null, 0)) ? null : /datum/msg/needle/too_tough
 external_dependency	code/library/reagents/needle.dm	if(istype(H.get_equipped_item(SLOT_ID_SUIT), /obj/item/clothing/suit/space))
 external_dependency	code/library/reagents/needle.dm	if(istype(H.get_equipped_item(SLOT_ID_SUIT), /obj/item/clothing/suit/space))
 external_dependency	code/library/reagents/needle.dm	holder.balloon_alert(A.actor, "[holder] uncapped")
