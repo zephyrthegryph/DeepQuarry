@@ -155,6 +155,9 @@ impl<'m> Ty<'m> {
 
     /// BYOND's builtin definition of `name` on this type, when it has one.
     fn builtin_proc(&self, name: &str) -> Option<Proc<'m>> {
+        if !self.has_builtin_procs() {
+            return None;
+        }
         let (n, p) = builtins::get().procs.get(self.path())?.iter().find(|(n, _)| n == name)?;
         Some(Proc::Builtin { owner: *self, name: n.as_str(), proc: p })
     }
@@ -195,10 +198,15 @@ impl<'m> Ty<'m> {
     pub fn proc(&self, name: &str) -> Option<Proc<'m>> {
         super::reads::note(|| super::reads::Read::Lookup { owner: Arc::from(self.path()), name: Arc::from(name), kind: super::reads::LookupKind::Proc });
         super::profile::count(super::profile::PROC_RESOLVE);
+        // The name's symbol once for the whole chain (each type's definitions are keyed by it).
+        let sym = dm_ir::SymbolId::of(name);
         let mut cur = Some(*self);
         while let Some(t) = cur {
-            if let Some(p) = t.last_definition(name) {
-                return Some(p);
+            if let Some(&id) = t.own_proc_ids_by(sym).last() {
+                return Some(Proc::Code(t.member(id)));
+            }
+            if let Some(b) = t.builtin_proc(name) {
+                return Some(b);
             }
             cur = t.parent();
         }

@@ -38,6 +38,7 @@ pub(crate) fn build_frontend_with(dme: &Path, defines: BTreeMap<String, String>)
 /// The last front end this process built outside the daemon, and the `.dme` it is of: a run asks for the front end of the same tree more
 /// than once (the model, DreamChecker's input, the generators' second model), and a cold build costs every core for many seconds.
 static LAST: std::sync::Mutex<Option<(std::path::PathBuf, FrontendRevision)>> = std::sync::Mutex::new(None);
+static BUILDING: std::sync::Mutex<()> = std::sync::Mutex::new(());
 
 /// [`LAST`] when it is of `dme` and every text it read is still what the disk holds (read the way the front end reads it). Any doubt is a
 /// rebuild.
@@ -68,14 +69,18 @@ pub fn frontend(dme: &Path) -> Result<FrontendRevision, String> {
     let started = std::time::Instant::now();
     let revision = match crate::daemon::hosted_frontend(dme, &defines) {
         Some(revision) => revision?,
-        None => match remembered(dme) {
-            Some(revision) => revision,
-            None => {
-                let revision = FrontendRevision::new(build_frontend_with(dme, defines).map_err(|e| e.to_string())?);
-                *LAST.lock().unwrap_or_else(|e| e.into_inner()) = Some((dme.to_path_buf(), revision.clone()));
-                revision
+        // One build at a time: a second caller (DreamChecker's input while the model builds) waits for it and takes it.
+        None => {
+            let _building = BUILDING.lock().unwrap_or_else(|e| e.into_inner());
+            match remembered(dme) {
+                Some(revision) => revision,
+                None => {
+                    let revision = FrontendRevision::new(build_frontend_with(dme, defines).map_err(|e| e.to_string())?);
+                    *LAST.lock().unwrap_or_else(|e| e.into_inner()) = Some((dme.to_path_buf(), revision.clone()));
+                    revision
+                }
             }
-        },
+        }
     };
     if dq_hostio::var_os("DQ_ANALYZE_PARSE_TRACE").is_some() {
         dq_hostio::out(false, format_args!("analyze: dmbc front end {:.1?}", started.elapsed()), true);

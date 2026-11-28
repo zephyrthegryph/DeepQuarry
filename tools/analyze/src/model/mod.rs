@@ -76,6 +76,8 @@ pub struct Model {
     /// Each own member's node and name, by member index: the tree's accessors go through a chunked arena and a symbol table that a
     /// retained session layers revision over revision, and the walks ask for a member's name and kind millions of times.
     minfo: Vec<Option<(&'static MemberNode, &'static str)>>,
+    /// Per type: whether BYOND's builtin table lists procs for it.
+    builtin_procs: Vec<bool>,
     /// Each proc's parameters, parsed from its header when first asked.
     params: Vec<std::sync::RwLock<HashMap<MemberId, Arc<Vec<Param>>>>>,
     /// The repo-relative spelling of each path the site map names: every included file's resolved when the model is made (the site
@@ -202,8 +204,10 @@ impl Model {
                 minfo[id.index()] = Some(unsafe { (std::mem::transmute::<&MemberNode, &'static MemberNode>(m), std::mem::transmute::<&str, &'static str>(name)) });
             }
         }
+        let builtin_procs: Vec<bool> = paths.iter().map(|p| builtins::get().procs.contains_key(&**p)).collect();
         let model = Model {
             minfo,
+            builtin_procs,
             blocks: (0..SITE_SHARDS).map(|_| Default::default()).collect(),
             bodies: std::sync::OnceLock::new(),
             initializers: std::sync::OnceLock::new(),
@@ -643,6 +647,16 @@ impl<'m> Ty<'m> {
         reads::note(|| reads::Read::Lookup { owner: Arc::from(self.path()), name: Arc::from(name), kind: reads::LookupKind::Var });
         let m = self.m;
         m.named.get(&(self.id, dm_ir::SymbolId::of(name), true)).into_iter().flatten().map(move |&id| Member { m, id })
+    }
+
+    /// [`Ty::own_proc_ids`] by the name's symbol, noting no read (the caller noted the lookup).
+    pub(crate) fn own_proc_ids_by(&self, name: dm_ir::SymbolId) -> &'m [MemberId] {
+        self.m.named.get(&(self.id, name, false)).map_or(&[], |v| &v[..])
+    }
+
+    /// Whether BYOND's builtin table has procs for this type (most types have none: their lookups skip the table).
+    pub(crate) fn has_builtin_procs(&self) -> bool {
+        self.m.builtin_procs.get(self.id.index()).copied().unwrap_or(false)
     }
 
     /// The ids of this type's own definitions of the proc `name`, in override order.
