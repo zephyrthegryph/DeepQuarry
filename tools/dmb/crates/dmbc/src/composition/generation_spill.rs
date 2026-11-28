@@ -65,7 +65,7 @@ impl RetainedGeneration {
         {
             return Some(format!("image {hash:032x} already stored"));
         }
-        let message = match crate::variant_spill::write(&directory, key, base, link, slot.fields.as_ref(), image, workers) {
+        let message = match crate::variant_spill::write(&directory, key, base, link, slot.fields.as_ref(), slot.string_requests.as_deref(), image, workers) {
             Ok(written) => {
                 self.spill.lock().unwrap_or_else(|e| e.into_inner()).stored = crate::variant_spill::peek(&directory, key);
                 let evicted = crate::variant_spill::evict(&directory, None);
@@ -98,8 +98,9 @@ impl RetainedGeneration {
             return;
         }
         let fields = replaced.fields.clone();
+        let requests = replaced.string_requests.clone();
         let spawned = std::thread::Builder::new().name("dmbc-spill".into()).spawn(move || {
-            let message = match crate::variant_spill::write(&directory, file, &base, &link, fields.as_ref(), &image, 2) {
+            let message = match crate::variant_spill::write(&directory, file, &base, &link, fields.as_ref(), requests.as_deref(), &image, 2) {
                 Ok(written) => format!(
                     "stored the replaced base bodies={} {:.1} MB in {:.2}s",
                     base.text_key().1,
@@ -163,6 +164,7 @@ impl RetainedGeneration {
                 base: Some(Arc::new(restored.base)),
                 image: Some(Arc::new(restored.image)),
                 replaced: None,
+                string_requests: restored.string_requests.map(Arc::new),
             },
         );
         drop(slot);

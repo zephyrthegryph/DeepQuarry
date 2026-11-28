@@ -51,6 +51,10 @@ pub(super) struct PatchSlot {
     /// program text the replaced one is stored (`variant_spill`, keyed by its text) so a compile root that alternates
     /// between trees with different declarations finds it again (`restore_patch_base`).
     replaced: Option<Arc<PatchSlot>>,
+    /// Content hashes of every string composition interned for the patch base's model (`StringIndex::record_requests`):
+    /// a body patch may move content into or out of a String slot only when no writer asked for it by value. A body
+    /// patch leaves them as they are (declarations and frames are unchanged); none after a restore.
+    string_requests: Option<Arc<std::collections::HashSet<u128>>>,
 }
 /// A single latest successful generation; no history or source authority retained.
 pub struct RetainedGeneration {
@@ -278,8 +282,19 @@ impl RetainedGeneration {
                 image: None,
                 fields: None,
                 replaced,
+                string_requests: None,
             };
         });
+    }
+    /// What composition interned for the model this request composes (after capture_patch_link).
+    pub(super) fn capture_string_requests(&self, requests: std::collections::HashSet<u128>) {
+        self.attempt.with_pending(|_| {
+            self.patch.lock().unwrap_or_else(|e| e.into_inner()).string_requests = Some(Arc::new(requests));
+        });
+    }
+    /// The patch base's composition string requests (see `PatchSlot::string_requests`).
+    pub(crate) fn string_requests(&self) -> Option<Arc<std::collections::HashSet<u128>>> {
+        self.patch.lock().unwrap_or_else(|e| e.into_inner()).string_requests.clone()
     }
     /// Field records of the model this request composes (after capture_patch_link).
     pub(super) fn capture_field_records(&self, fields: crate::class_projection::FieldRecords) {

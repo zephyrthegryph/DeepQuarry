@@ -456,10 +456,8 @@ does exactly this is `tools/dmb/scripts/incremental_equiv_sequence.sh`.
   string id (418,678), and the old one stays in the table unreferenced. A cold compile puts the new literal where the old one was
   (117,909). Not observable: only the relative order of variable-name strings is (`vars` iterates by name string id), and a body
   patch can neither add a variable name nor move one (the first root procedure, whose literals register strings with the
-  declarations, never patches). Strict-order `dmb-equiv` agrees. Left as it is: making it byte-identical needs to know that no other
-  unit, class record or default still names the old string and that the new one's first reference falls in the same place, i.e. the
-  whole-program string inventory a body patch exists to avoid. (A `\ref[]` of a string constant prints its id; nothing relies on
-  that, and native ids already differ from DreamMaker's everywhere.)
+  declarations, never patches). Strict-order `dmb-equiv` agrees. (A `\ref[]` of a string constant prints its id.) Made
+  byte-identical afterwards: "Body patches byte-identical" below.
 - (B) Two places kept history-dependent numbering. The append patch (`retained_output_append.rs`) gave a new var's name string and
   a new proc the next free index; and every whole-program link inside the daemon pinned the previous build's indexes and appended
   new keys (dm-link `stabilize`). **This is a real behaviour difference, so dmb-equiv's verdict was right** and the "EQUIVALENT"

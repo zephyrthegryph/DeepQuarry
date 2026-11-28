@@ -33,7 +33,7 @@ use std::{
 };
 
 /// Bump with any change to the stored layout or to a stored type: an old file is then ignored (and ages out).
-const VERSION: u32 = 2;
+const VERSION: u32 = 3;
 const MAGIC: &[u8; 8] = b"DMBSPIL1";
 const EXTENSION: &str = "spill";
 const DEFAULT_BUDGET_GB: u64 = 4;
@@ -107,6 +107,10 @@ struct LinkParts {
     fields: Option<Vec<((SymbolId, SymbolId), u32)>>,
     /// The build did not define `DEBUG`: patched procedure words are composed without debug instructions.
     strip_debug_ops: bool,
+    /// The tables' String ledger and what composition interned by value: a restored base renumbers a body's replaced
+    /// literals as a fresh link would (`crate::retained_output`).
+    string_ledger: Option<dm_link::StringLedger>,
+    string_requests: Option<Vec<u128>>,
 }
 
 #[derive(Serialize, Deserialize)]
@@ -165,6 +169,7 @@ pub(crate) struct Written {
 fn link_parts(
     link: &PatchLink,
     fields: Option<&crate::class_projection::FieldRecords>,
+    requests: Option<&std::collections::HashSet<u128>>,
     initializers: crate::symbolic::PositionedList,
 ) -> LinkParts {
     let mut mobs: Vec<(SymbolId, u32)> = link.mobs.iter().map(|(id, index)| (*id, *index)).collect();
@@ -176,6 +181,12 @@ fn link_parts(
         mobs,
         initializers,
         strip_debug_ops: link.tables.strips_debug_ops(),
+        string_ledger: link.tables.string_ledger().cloned(),
+        string_requests: requests.map(|requests| {
+            let mut all: Vec<u128> = requests.iter().copied().collect();
+            all.sort_unstable();
+            all
+        }),
         fields: fields.map(|fields| {
             let mut all: Vec<_> = fields.0.iter().map(|(pair, record)| (*pair, *record)).collect();
             all.sort_unstable();
@@ -209,6 +220,7 @@ pub(crate) fn write(
     base: &OutputBase,
     link: &PatchLink,
     fields: Option<&crate::class_projection::FieldRecords>,
+    requests: Option<&std::collections::HashSet<u128>>,
     image: &PatchImage,
     workers: usize,
 ) -> Result<Written, String> {
@@ -245,7 +257,7 @@ pub(crate) fn write(
         // One part at a time: each is built, written and dropped before the next, so a store made under memory
         // pressure holds one part's copy beside the retained state, not all of them.
         total += frame(&mut out, 1, &base.to_parts(workers).ok_or("the source half cannot be stored")?)?;
-        total += frame(&mut out, 2, &link_parts(link, fields, initializers))?;
+        total += frame(&mut out, 2, &link_parts(link, fields, requests, initializers))?;
         total += frame(&mut out, 3, &image_parts(image)?)?;
         let bytes = image.rows.image().bytes();
         out.write_all(&(bytes.len() as u64).to_le_bytes()).map_err(|e| e.to_string())?;
@@ -277,6 +289,7 @@ pub(crate) struct Restored {
     pub link: PatchLink,
     pub fields: Option<crate::class_projection::FieldRecords>,
     pub image: PatchImage,
+    pub string_requests: Option<std::collections::HashSet<u128>>,
 }
 
 /// Read `key`'s file back. Every frame is checksummed and the image must hash to the digest it was stored with and parse as
@@ -321,7 +334,8 @@ pub(crate) fn read(dir: &Path, key: u128) -> Result<Restored, String> {
             .into_iter()
             .map(|(id, bytes)| (id, std::sync::Arc::<[u8]>::from(bytes))),
     )
-    .with_strip_debug_ops(link_parts.strip_debug_ops);
+    .with_strip_debug_ops(link_parts.strip_debug_ops)
+    .with_string_ledger(link_parts.string_ledger);
     let link = PatchLink {
         tables,
         mobs: link_parts.mobs.into_iter().collect(),
@@ -335,6 +349,7 @@ pub(crate) fn read(dir: &Path, key: u128) -> Result<Restored, String> {
         link,
         fields,
         image,
+        string_requests: link_parts.string_requests.map(|requests| requests.into_iter().collect()),
     })
 }
 

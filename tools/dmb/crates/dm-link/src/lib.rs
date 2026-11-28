@@ -143,6 +143,8 @@ pub struct LinkInventory {
     /// The build does not define `DEBUG`: procedure words are composed without the `DbgFile`/`DbgLine`
     /// instructions every lowered body carries, so one lowered record serves both kinds of build.
     pub strip_debug_ops: bool,
+    /// First occurrences of the String append order (`string_ledger`), kept with the tables for body patches.
+    pub string_ledger: Option<StringLedger>,
 }
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub enum LinkError {
@@ -180,12 +182,16 @@ pub use string_registration::{
 };
 mod bindings;
 mod shared_pool;
+mod string_ledger;
+pub use string_ledger::{StringLedger, StringSlot};
 pub use bindings::{BindingTables, RetainedBindings};
 #[derive(Clone, Debug)]
 pub struct LinkTables {
     bindings: BindingTables,
     content: Arc<BTreeMap<Key, EntryContent>>,
     strip_debug_ops: bool,
+    /// The String ledger of a fresh link (none after an append extension, a renumbering or a restore).
+    strings: Option<Arc<StringLedger>>,
 }
 fn link_lap(lap: &mut std::time::Instant, label: &str) {
     static ENABLED: std::sync::OnceLock<bool> = std::sync::OnceLock::new();
@@ -237,6 +243,7 @@ impl LinkTables {
             bindings: BindingTables::validated(indexes, slots, None),
             content: Arc::new(content),
             strip_debug_ops: false,
+            strings: None,
         }
     }
     /// Whether procedure words are composed without their `DbgFile`/`DbgLine` instructions (a build without `DEBUG`).
@@ -294,6 +301,7 @@ impl LinkTables {
                 bindings: BindingTables::validated(indexes, slots, None),
                 content: Arc::new(content),
                 strip_debug_ops: self.strip_debug_ops,
+                strings: None,
             },
             added,
         ))
@@ -318,6 +326,7 @@ impl LinkTables {
             bindings: BindingTables::validated(indexes, self.bindings.slots().clone(), None),
             content: Arc::clone(&self.content),
             strip_debug_ops: self.strip_debug_ops,
+            strings: None,
         }
     }
     pub fn build(inventory: LinkInventory) -> Result<Self, LinkError> {
@@ -331,7 +340,7 @@ impl LinkTables {
             .map(|(tables, _)| tables)
     }
     fn build_with_assignment_recipe(
-        inventory: LinkInventory,
+        mut inventory: LinkInventory,
         previous: Option<&BindingTables>,
         recipe: Option<&assignment_recipe::AssignmentRecipe>,
         retain_recipe: bool,
@@ -341,6 +350,7 @@ impl LinkTables {
         }
         let mut lap = std::time::Instant::now();
         inventory.validate_shared()?;
+        let strings = inventory.string_ledger.take().map(Arc::new);
         // Bulk-build both maps from sorted rows (one sort, linear tree build)
         // instead of one tree insert per row. Any invalid or colliding input
         // falls back to the ordered per-row loop, so errors keep their order.
@@ -380,6 +390,7 @@ impl LinkTables {
                     bindings: previous.clone(),
                     content: Arc::new(content),
                     strip_debug_ops: inventory.strip_debug_ops,
+                    strings,
                 },
                 None,
             ));
@@ -527,6 +538,7 @@ impl LinkTables {
                 bindings: BindingTables::validated(indexes, slots, previous),
                 content: Arc::new(content),
                 strip_debug_ops: inventory.strip_debug_ops,
+                strings,
             },
             captured,
         ))

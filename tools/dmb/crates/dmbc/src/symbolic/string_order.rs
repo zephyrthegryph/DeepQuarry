@@ -160,6 +160,7 @@ fn complete_with(
         }
     }
     drop(add);
+    let registered = order.len();
     // Complete coverage follows the existing ordered symbolic replay. Duplicate
     // payload rows and fixed engine strings remain validated by LinkTables.
     for entry in inventory.entry_iter() {
@@ -170,6 +171,9 @@ fn complete_with(
     }
     inventory.append_orders.insert(Table::String, order);
     inventory.string_registration = None;
+    // Where each string was first seen, kept with the tables: a body patch renumbers a replaced literal as this order
+    // would (dm_link::StringLedger).
+    inventory.string_ledger = dm_link::StringLedger::build(inventory, registered);
     Ok(())
 }
 

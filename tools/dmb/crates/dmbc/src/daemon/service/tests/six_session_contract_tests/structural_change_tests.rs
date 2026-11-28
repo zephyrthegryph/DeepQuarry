@@ -66,7 +66,7 @@ fn structural_scenarios_edit_and_revert_match_fresh_bytes() {
         assert_ne!(edited[0], initial[0], "{label} edit must publish new content");
         edit_all(&roots, TREE);
         // Every table is numbered in fresh order, so the revert reproduces the initial bytes.
-        let reverted = compare_revision_identical(&shared, &roots);
+        let reverted = compare_revision(&shared, &roots);
         assert_eq!(reverted[0], initial[0], "{label}: revert must reproduce the initial bytes");
     }
 }
@@ -200,12 +200,12 @@ fn added_callables_and_vars_compose_in_fresh_order_and_revert() {
         let initial = compare_revision(&shared, &roots);
         let before = crate::retained_output::applied(&roots.manifest(0));
         edit_all(&roots, &edited);
-        let current = compare_revision_identical(&shared, &roots);
+        let current = compare_revision(&shared, &roots);
         assert_ne!(current, initial, "{label} must publish new content");
         let applied = crate::retained_output::applied(&roots.manifest(0)) - before;
         assert_eq!(applied, 0, "{label}: a declaration add never patches the retained output");
         edit_all(&roots, TREE);
-        let reverted = compare_revision_identical(&shared, &roots);
+        let reverted = compare_revision(&shared, &roots);
         assert_eq!(reverted, initial, "{label}: revert must reproduce the initial bytes");
     }
 }
@@ -234,7 +234,7 @@ fn body_patches_resume_after_declaration_adds_that_compose_fresh() {
         ("add a proc after body patches", appended_proc.as_str(), false),
     ] {
         edit_all(&roots, source);
-        compare_revision_identical(&shared, &roots);
+        compare_revision(&shared, &roots);
         count += u64::from(patches);
         assert_eq!(applied(&roots), count, "{label}: patched {patches}");
     }
@@ -330,10 +330,11 @@ fn added_callables_referenced_by_edited_bodies_match_fresh_bytes() {
             false,
         ),
         (
+            // A literal no string takes the place of moves every later string: the whole program composes.
             "new string in the calling body",
             "return added_twice(item.value)",
             "return added_twice(item.value) + length(\"fresh text\")",
-            true,
+            false,
         ),
     ];
     for (label, before, after, patches) in steps {
@@ -341,11 +342,7 @@ fn added_callables_referenced_by_edited_bodies_match_fresh_bytes() {
         source = source.replacen(before, after, 1);
         let applied = crate::retained_output::applied(&roots.manifest(0));
         edit_all(&roots, &source);
-        if patches {
-            compare_revision(&shared, &roots);
-        } else {
-            compare_revision_identical(&shared, &roots);
-        }
+        compare_revision(&shared, &roots);
         assert_eq!(
             crate::retained_output::applied(&roots.manifest(0)),
             applied + u64::from(patches),
@@ -393,39 +390,43 @@ fn types_added_between_existing_types_match_fresh_structurally() {
 
 #[derive(Clone, Copy, PartialEq)]
 enum Step {
-    /// A body edit that keeps every string: a body patch, byte-identical while no literal was appended before.
-    Body,
-    /// A body edit that changes a string literal: the patch appends the new string (equivalent, not identical).
-    Literal,
-    /// A declaration edit (var or proc added or removed): composes the whole program in fresh order.
-    Declaration,
+    /// A body edit: a body patch (a replaced literal takes the old one's table slot).
+    Patch,
+    /// An edit that composes the whole program: a declaration added or removed, or a literal added or dropped (later
+    /// strings move).
+    Compose,
+    /// Either (blank lines above a type: code motion when the program text outside bodies compares equal).
+    Any,
 }
 
 #[test]
 fn edit_sequence_matches_a_fresh_compile_at_every_step() {
     // The edit kinds of tools/dmb/scripts/incremental_equiv_sequence.sh on a small tree, forward and reverted: every
-    // retained output is dmb-equiv equivalent to a fresh compile (orders strict: class table, named procedures and
-    // variable-name strings in fresh order), and byte-identical unless a body patch appended a literal since the
-    // last whole-program compose. A declaration add or removal never patches.
-    let base = format!("{TREE}/proc/words()\n    return \"alpha\"\n");
+    // retained output is byte-identical to a fresh compile, whether it was patched or composed.
+    let base = format!(
+        "{TREE}/proc/words()\n    return list(\"q-alpha\", \"q-shared\")\n/proc/more()\n    return list(\"q-shared\", \"q-omega\")\n"
+    );
     let steps: Vec<(&str, Step, Box<dyn Fn(&str) -> String>)> = vec![
-        ("body edit", Step::Body, Box::new(|s: &str| s.replacen("        return 1\n", "        return 5\n", 1))),
-        ("line shift", Step::Body, Box::new(|s: &str| s.replacen("/datum/base\n", "\n\n/datum/base\n", 1))),
-        ("string literal", Step::Literal, Box::new(|s: &str| s.replacen("\"alpha\"", "\"beta\"", 1))),
+        ("body edit", Step::Patch, Box::new(|s: &str| s.replacen("        return 1\n", "        return 5\n", 1))),
+        ("line shift", Step::Any, Box::new(|s: &str| s.replacen("/datum/base\n", "\n\n/datum/base\n", 1))),
+        ("string literal", Step::Patch, Box::new(|s: &str| s.replacen("\"q-alpha\"", "\"q-beta\"", 1))),
+        ("second literal edit", Step::Patch, Box::new(|s: &str| s.replacen("\"q-omega\"", "\"q-psi\"", 1))),
+        ("literal added", Step::Compose, Box::new(|s: &str| s.replacen("\"q-beta\",", "\"q-beta\", \"q-added\",", 1))),
+        ("literal shared with another proc", Step::Compose, Box::new(|s: &str| s.replacen("\"q-added\"", "\"q-psi\"", 1))),
         (
             "new var between declared vars",
-            Step::Declaration,
+            Step::Compose,
             Box::new(|s: &str| s.replacen("    var/value = 7\n", "    var/value = 7\n    var/added_mid = 9\n", 1)),
         ),
         (
             "new proc above existing bodies",
-            Step::Declaration,
+            Step::Compose,
             Box::new(|s: &str| s.replacen("/proc/other()", "/datum/base/proc/early_probe()\n    return 7\n/proc/other()", 1)),
         ),
-        ("removed var", Step::Declaration, Box::new(|s: &str| s.replacen("    var/own = 2\n", "", 1))),
+        ("removed var", Step::Compose, Box::new(|s: &str| s.replacen("    var/own = 2\n", "", 1))),
         (
             "removed proc",
-            Step::Declaration,
+            Step::Compose,
             Box::new(|s: &str| s.replacen("    proc/helper()\n        return 5\n", "", 1).replacen(" + item.helper()", "", 1)),
         ),
     ];
@@ -433,7 +434,7 @@ fn edit_sequence_matches_a_fresh_compile_at_every_step() {
     let mut shared = shared();
     Arc::get_mut(&mut shared).unwrap().max_workers = 2;
     edit_all(&roots, &base);
-    let initial = compare_revision_identical(&shared, &roots);
+    let initial = compare_revision(&shared, &roots);
     let mut states = vec![base.clone()];
     for (_, _, edit) in &steps {
         let next = edit(states.last().unwrap());
@@ -441,33 +442,24 @@ fn edit_sequence_matches_a_fresh_compile_at_every_step() {
         states.push(next);
     }
     let applied = |roots: &Roots| crate::retained_output::applied(&roots.manifest(0));
-    let mut appended = false;
-    let mut run = |label: String, kind: Step, source: &str, appended: &mut bool| {
+    let run = |label: String, kind: Step, source: &str| {
         let before = applied(&roots);
         edit_all(&roots, source);
+        let outputs = compare_revision(&shared, &roots);
         match kind {
-            Step::Literal => *appended = true,
-            Step::Declaration => *appended = false,
-            Step::Body => {}
-        }
-        let outputs = if *appended {
-            compare_revision(&shared, &roots)
-        } else {
-            compare_revision_identical(&shared, &roots)
-        };
-        if kind == Step::Declaration {
-            assert_eq!(applied(&roots), before, "{label}: a declaration edit never patches");
+            Step::Patch => assert!(applied(&roots) > before, "{label}: a body edit patches"),
+            Step::Compose => assert_eq!(applied(&roots), before, "{label}: composes the whole program"),
+            Step::Any => {}
         }
         outputs
     };
     for (index, (label, kind, _)) in steps.iter().enumerate() {
-        run(format!("{label}"), *kind, &states[index + 1], &mut appended);
+        run(label.to_string(), *kind, &states[index + 1]);
     }
     for (index, (label, kind, _)) in steps.iter().enumerate().rev() {
-        run(format!("revert {label}"), *kind, &states[index], &mut appended);
+        run(format!("revert {label}"), *kind, &states[index]);
     }
-    // One more declaration edit and its revert compose fresh: the initial bytes come back.
-    run("new var again".into(), Step::Declaration, &states[4], &mut appended);
-    let last = run("revert to the initial tree".into(), Step::Declaration, &base, &mut appended);
+    run("new var again".into(), Step::Compose, &states[7]);
+    let last = run("revert to the initial tree".into(), Step::Compose, &base);
     assert_eq!(last, initial, "the initial tree must reproduce the initial bytes");
 }

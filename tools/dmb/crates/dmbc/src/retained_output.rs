@@ -22,14 +22,16 @@
 //! text or position changed are relowered; each must keep its link footprint (frame, ABI,
 //! features, inventory, strings aside, debug paths, instances, helpers, required types, no
 //! modified instances), and none may be the first root procedure (its literals register strings
-//! with the declarations). New string literals are appended to the retained string table.
+//! with the declarations). A changed string literal takes the table slot a fresh link of the patched program
+//! gives it, which is the replaced string's slot when nothing else moves (`dm_link::StringLedger`); an edit
+//! that moves other strings (a literal added or dropped) composes the whole program. The output is
+//! byte-identical to a cold compile.
 //!
 //! One declaration edit is admitted although the text outside bodies changed: a pure numeric default edit
 //! (its Variables records are rewritten in place; no table is renumbered). An edit that adds a proc, verb or
 //! var composes the whole program: its new keys take their fresh positions in the procedure and string tables,
 //! whose orders `typesof(/T/proc)` and `vars` iterate (doc/rewrite/native_compiler_issues.md, "Incremental
-//! numbering"). New string literals of a relowered body are appended: literal string ids are not observable
-//! (only the relative order of variable-name strings is, and a body cannot add or move one).
+//! numbering").
 use crate::initializer_policy::warnings::InitializerWarning;
 use crate::lowering::UnitIdentity;
 use std::collections::{BTreeMap, HashMap};
@@ -1058,11 +1060,9 @@ pub(crate) fn splice(
         .collect();
     let mut rows = Vec::new();
     let mut unit_warnings = BTreeMap::new();
-    // Units whose footprint differs only in the string literals they own: their new strings are
-    // appended to the string table and the old ones stay unreferenced: literal ids are not observable, and a body
-    // cannot add or move a variable-name string (the first root procedure, which registers some, declines above).
+    // Units whose footprint differs only in the string literals they own: their strings are renumbered below as a
+    // fresh link would number them (the first root procedure, which registers strings, declines above).
     let mut string_units: Vec<(UnitIdentity, crate::symbolic::PreparedPatchRecord)> = Vec::new();
-    let mut new_entries: Vec<(dm_link::Key, dm_link::EntryContent)> = Vec::new();
     for contribution in contributions {
         let record = contribution.patch_record();
         let identity = record.record.identity();
@@ -1090,33 +1090,46 @@ pub(crate) fn splice(
             if !strings_only {
                 return Err(format!("unit {identity:?} link footprint changed: {first}"));
             }
-            new_entries.extend(record.record.string_entries());
             string_units.push((identity, record));
         }
     }
-    // With new strings the units link against tables extended append-only; every existing
-    // assignment stays, so the other units' words are unchanged.
+    // A unit whose literals changed takes, for each string it introduces in place of another, that string's slot,
+    // which is where a fresh link of the patched program numbers it; an edit that would move any other string (a
+    // literal added or dropped, one another unit names) composes the whole program (dm_link::StringLedger). A slot
+    // whose old or new content a composition writer interned by value (a local name, a type path) declines too.
     let mut extended = None;
     let mut new_strings = Vec::new();
     if !string_units.is_empty() {
-        let starts = retained
-            .generation
-            .model_table_starts(base.dmb_hash)
-            .ok_or("retained model released or differs from the retained output")?;
-        let (tables, added) = link
+        let units: Vec<_> = string_units
+            .iter()
+            .map(|(identity, record)| (crate::symbolic::unit_key(*identity), record.record.string_entries()))
+            .collect();
+        let (tables, slots) = link
             .tables
-            .extended(new_entries, &starts)
-            .map_err(|error| format!("string append link: {error:?}"))?;
-        for &(key, index) in &added {
-            match key {
-                dm_link::Key::String(_) => new_strings.push((
-                    index,
-                    tables.content(key).ok_or("appended string content")?.to_vec(),
-                )),
-                other => return Err(format!("string append would add {other:?}")),
+            .replaced_unit_strings(&units)
+            .map_err(|error| format!("string renumbering: {error}"))?;
+        if !slots.is_empty() {
+            let requests = retained
+                .generation
+                .string_requests()
+                .ok_or("no composition string requests retained for the patch base")?;
+            for slot in &slots {
+                for key in [slot.old, slot.new] {
+                    let bytes = tables
+                        .content(key)
+                        .or_else(|| link.tables.content(key))
+                        .ok_or("replaced string content")?;
+                    if requests.contains(&xxhash_rust::xxh3::xxh3_128(bytes)) {
+                        return Err(format!("composition interns {key:?} by value: a replaced string slot would differ"));
+                    }
+                }
+                new_strings.push((
+                    slot.index,
+                    tables.content(slot.new).ok_or("new string content")?.to_vec(),
+                ));
             }
         }
-        dm_profile::request_mark("splice.strings_extended");
+        dm_profile::request_mark("splice.strings_replaced");
         extended = Some(tables);
     }
     let tables = extended.as_ref().unwrap_or(&link.tables);
@@ -1207,7 +1220,7 @@ pub(crate) fn splice(
         .map_err(|error| format!("local warnings: {error:?}"))?;
     let output_warnings = warnings.render(local);
     let patched_rows = rows.len() + variable_values.len();
-    let appended_strings = new_strings.len();
+    let replaced_strings = new_strings.len();
     let units = if string_units.is_empty() {
         Arc::clone(&base.units)
     } else {
@@ -1231,12 +1244,12 @@ pub(crate) fn splice(
         dmb_hash: 0,
     };
     let dmb = if let Some(tables) = extended {
-        // The model path re-encodes with list-row reuse and installs the extended tables;
+        // The model path re-encodes with list-row reuse and installs the replaced tables;
         // `patch_rows` would leave the new strings out of the image.
         let initializers = next_initializers.unwrap_or_else(|| link.initializers.clone());
         retained.generation.patch_model(
             base.dmb_hash,
-            |model| crate::composition::append::append_table_strings(model, &new_strings),
+            |model| crate::composition::string_slots::replace_table_strings(model, &new_strings),
             |model, _strings| {
                 for (row, words) in &rows {
                     *model.lists.get_mut(*row).ok_or_else(|| {
@@ -1268,8 +1281,8 @@ pub(crate) fn splice(
             .generation
             .patch_rows(&image, &rows, &variable_values, next, next_initializers)?
     };
-    if appended_strings > 0 {
-        crate::daemon_eprintln!("native incremental output: {appended_strings} strings appended");
+    if replaced_strings > 0 {
+        crate::daemon_eprintln!("native incremental output: {replaced_strings} string slots replaced");
     }
     Ok(Patched {
         dmb,

@@ -33,6 +33,7 @@ impl StringSeed {
             base: Some(self.base.clone()),
             buckets: HashMap::new(),
             collisions: HashMap::new(),
+            requests: None,
         })
     }
     pub(crate) fn census(&self, census: &mut crate::heap_census::HeapCensus) {
@@ -48,6 +49,8 @@ pub(crate) struct StringIndex {
     base: Option<Arc<BaseIndex>>,
     pub(super) buckets: HashMap<u128, u32>,
     collisions: HashMap<u128, Vec<u32>>,
+    /// Content hashes of every string interned through this index, when recorded (`record_requests`).
+    requests: Option<std::collections::HashSet<u128>>,
 }
 impl StringIndex {
     pub(crate) fn build(dmb: &Dmb) -> Result<Self, CompositionError> {
@@ -55,6 +58,7 @@ impl StringIndex {
             base: None,
             buckets: HashMap::with_capacity(dmb.strings.len()),
             collisions: HashMap::new(),
+            requests: None,
         };
         for (index, string) in dmb.strings.iter().enumerate() {
             let id = u32::try_from(index).map_err(|_| unsupported("string count overflow"))?;
@@ -84,6 +88,14 @@ impl StringIndex {
             })
             .clone();
         StringSeed { len, base }
+    }
+    /// Record what composition interns from here on: a body patch may give a table slot other content only when no
+    /// writer asked for the old or the new content by value (`crate::retained_output`).
+    pub(super) fn record_requests(&mut self) {
+        self.requests = Some(std::collections::HashSet::new());
+    }
+    pub(super) fn take_requests(&mut self) -> Option<std::collections::HashSet<u128>> {
+        self.requests.take()
     }
     pub(super) fn lookup(&self, dmb: &Dmb, data: &[u8]) -> Option<u32> {
         self.find(dmb, xxhash_rust::xxh3::xxh3_128(data), data)
@@ -131,6 +143,9 @@ impl StringIndex {
         data: &[u8],
         hash: u128,
     ) -> Result<u32, CompositionError> {
+        if let Some(requests) = self.requests.as_mut() {
+            requests.insert(hash);
+        }
         if let Some(id) = self.find(dmb, hash, data) {
             return Ok(id);
         }

@@ -105,25 +105,16 @@ fn assert_equivalent_outputs(
     context: &str,
 ) {
     if retained.0 != fresh.0 {
-        // Only a body patch that appended a relowered body's new string literals may differ in bytes (the literal ids;
-        // `retained_output.rs`). Every observable order (class table, named procedures, variable-name strings) must be
-        // the fresh one: `dmb-equiv` with incremental-vs-fresh options (orders strict) must call the outputs equivalent.
+        // The report says what differs; `compare_revision` then fails on the bytes (a retained output is byte-identical
+        // to a fresh compile of the same source, `retained_output.rs`).
         let report = dmb_equiv::compare_bytes(&retained.1, Some(&retained.2), &fresh.1, Some(&fresh.2), &dmb_equiv::Options::default())
             .unwrap_or_else(|error| panic!("{context}: decode failed: {error}"));
         assert!(report.equivalent(), "{context}: outputs are not equivalent\n{}", report.render_text());
     }
 }
 
+/// Every retained output of the revision must be byte-identical to a fresh compile of its source.
 fn compare_revision(shared: &Arc<Shared>, roots: &Roots) -> Vec<crate::publish::OutputPair> {
-    compare_revision_as(shared, roots, false)
-}
-
-/// `compare_revision`, and every retained output must be byte-identical to its fresh compile.
-fn compare_revision_identical(shared: &Arc<Shared>, roots: &Roots) -> Vec<crate::publish::OutputPair> {
-    compare_revision_as(shared, roots, true)
-}
-
-fn compare_revision_as(shared: &Arc<Shared>, roots: &Roots, identical: bool) -> Vec<crate::publish::OutputPair> {
     let mut pairs = Vec::with_capacity(6);
     // Exactly two requests can be active, including their independent fresh
     // oracles. No detached workers or executor/store implementation is added.
@@ -177,7 +168,7 @@ fn compare_revision_as(shared: &Arc<Shared>, roots: &Roots, identical: bool) -> 
                             &fresh_destination,
                         );
                         assert_equivalent_outputs(&a, &b, &format!("root {index} retained vs fresh"));
-                        if identical && a.0 != b.0 {
+                        if a.0 != b.0 {
                             let report = dmb_equiv::compare_bytes(&a.1, Some(&a.2), &b.1, Some(&b.2), &dmb_equiv::Options { strict_order: true, ..Default::default() })
                                 .map(|report| report.render_text())
                                 .unwrap_or_else(|error| format!("decode failed: {error}"));
@@ -599,10 +590,11 @@ fn code_motion_edits_patch_and_match_fresh_bytes() {
 
 #[test]
 fn string_literal_edits_patch_and_match_fresh_bytes() {
-    // A body edit that changes the string literals a procedure owns appends the new strings to
-    // the string table and leaves the old ones unreferenced; it must still take the retained patch
-    // path and equal a fresh compile (dmb-equiv), also through line shifts and a revert.
-    let tree = "/proc/anchor()\n    return \"zero\"\n/proc/first(a)\n    return \"alpha\"\n/proc/second(b)\n    if(b)\n        return \"beta\"\n    return \"gamma\"\n/datum/holder\n    var/list/items = list(1, 2)\n    proc/count()\n        return items.len\n";
+    // A body edit that replaces a literal the procedure alone names patches: the new string takes the old one's table
+    // slot, where a fresh link numbers it. An edit that adds a literal, names one a later body introduces, or drops one
+    // moves later strings, so it composes the whole program. Every step is byte-identical to a fresh compile. (The
+    // literals are unlike the engine template's strings, which are pinned to their engine indexes.)
+    let tree = "/proc/anchor()\n    return \"s-zero\"\n/proc/first(a)\n    return \"s-alpha\"\n/proc/second(b)\n    if(b)\n        return \"s-beta\"\n    return \"s-gamma\"\n/datum/holder\n    var/list/items = list(1, 2)\n    proc/count()\n        return items.len\n";
     let roots = Roots::new();
     let mut shared = shared();
     Arc::get_mut(&mut shared).unwrap().max_workers = 2;
@@ -615,29 +607,29 @@ fn string_literal_edits_patch_and_match_fresh_bytes() {
             .map(|index| crate::retained_output::applied(&roots.manifest(index)))
             .collect()
     };
-    let changed = tree.replace("\"alpha\"", "\"alpha two\"");
-    let second_literal = changed.replace("return \"alpha two\"", "if(a)\n        return \"alpha three\"\n    return \"alpha two\"");
-    // The literal "gamma" already exists in another body: no new table string for it.
-    let reused = second_literal.replace("\"alpha three\"", "\"gamma\"");
-    let removed = reused.replace("if(a)\n        return \"gamma\"\n    return \"alpha two\"", "return \"delta\"");
+    let changed = tree.replace("\"s-alpha\"", "\"s-alpha two\"");
+    let replaced_again = changed.replace("\"s-beta\"", "\"s-beta two\"");
+    let second_literal = replaced_again.replace("return \"s-alpha two\"", "if(a)\n        return \"s-alpha three\"\n    return \"s-alpha two\"");
+    // "s-gamma" is introduced by a later body: naming it here moves its first occurrence.
+    let reused = second_literal.replace("\"s-alpha three\"", "\"s-gamma\"");
+    let removed = reused.replace("if(a)\n        return \"s-gamma\"\n    return \"s-alpha two\"", "return \"s-delta\"");
     let mut before = patched(&roots);
-    for (label, source) in [
-        ("changed literal", changed.as_str()),
-        ("added literal and lines", second_literal.as_str()),
-        ("literal already in the table", reused.as_str()),
-        ("literals removed", removed.as_str()),
-        ("revert", tree),
+    for (label, source, patches) in [
+        ("changed literal", changed.as_str(), true),
+        ("another body's literal", replaced_again.as_str(), true),
+        ("added literal and lines", second_literal.as_str(), false),
+        ("literal a later body introduces", reused.as_str(), false),
+        ("literals removed", removed.as_str(), false),
+        ("revert", tree, false),
     ] {
         for index in 0..6 {
             roots.edit(index, source);
         }
-        // Every step is compared with a fresh compile inside; after a revert the retained image still
-        // holds the orphaned strings, so only equivalence (not byte identity) with the initial holds.
         compare_revision(&shared, &roots);
         let after = patched(&roots);
         for index in 0..6 {
             if label != "revert" {
-                assert_eq!(after[index], before[index] + 1, "root {index}: {label} did not patch");
+                assert_eq!(after[index], before[index] + u64::from(patches), "root {index}: {label}: patched {patches}");
             }
         }
         before = after;

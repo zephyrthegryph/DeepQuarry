@@ -577,6 +577,9 @@ fn compose_records_access(
             None => (StringIndex::build(&dmb)?, None),
         }
     };
+    if generation.is_some() {
+        string_index.record_requests();
+    }
     drop(phase);
     let phase = dm_profile::detail_timer("compose.types_and_mobs");
     let class_roster = if let Some((plan, _)) = projection {
@@ -883,6 +886,9 @@ fn compose_records_access(
             .map_err(|e| unsupported(format!("class callbacks {e:?}")))?;
     }
     drop(class_roster);
+    if let (Some(generation), Some(requests)) = (generation, string_index.take_requests()) {
+        generation.capture_string_requests(requests);
+    }
     // The pool is valid only across writers that intern through this context.
     // Arbitrary non-text stages may mutate strings and must not reuse it.
     drop(string_index);
@@ -1023,7 +1029,7 @@ pub use owned::{
 
 mod frame_contribution;
 mod procedure_plan;
-pub(crate) mod append;
+pub(crate) mod string_slots;
 
 mod generation;
 pub use generation::RetainedGeneration;

@@ -9,15 +9,15 @@
 # for a declaration edit) and compares the output with a one-shot cold compile of the same source (`--no-daemon
 # --no-cache`, a fresh cache dir) by sha256 and with dmb-equiv (default options: the class table, named procedures and
 # variable-name strings in fresh order; and `--strict-order`). Steps (default all, in this order):
-#   body         one string literal in code/engine/actions/admission_query.dm changed (a body patch appends the literal)
+#   body         one string literal in code/engine/actions/admission_query.dm changed (a body patch: the new literal takes the old one's table slot)
 #   body-revert  that literal back
 #   shift        a blank line inserted above the first proc of that file (code motion), and reverted (shift-revert)
 #   var          `var/parity_probe = 0` added to /datum/act/input (code/engine/lifeforms/input.dm), between declared vars
 #   var-revert   that var removed again (a removed var)
 #   proc         `/datum/act/input/proc/parity_probe_proc()` added above the next proc of that file
 #   proc-revert  that proc removed again (a removed proc)
-# Exit status 1 when any step is not EQUIVALENT (default options) to its cold compile; each step's line says whether
-# the bytes are identical. Cold compiles of a source state already compiled are reused (the reverts share the base's).
+# Exit status 1 when any step's output is not byte-identical to its cold compile (each line also gives dmb-equiv's
+# verdicts, which say what differs). Cold compiles of a source state already compiled are reused (the reverts share the base's).
 # Needs a dmb-equiv binary (DMB_EQUIV, default the dq_cargo_target.sh dmb-equiv release build) and the generated files
 # (`tools/build/build.sh gen`). It restores both edited files from HEAD when it exits, and retires its daemon.
 # Writes (appends to) <out dir>/summary.txt. A cold compile takes 1.5-6 min on a loaded machine: run it in the background, and
@@ -78,7 +78,7 @@ compare() { # daemon-name cold-name
   verdict=$([ $? -eq 0 ] && echo EQUIVALENT || echo "NOT EQUIVALENT")
   "$EQUIV" "$OUT/$d.dmb" "$OUT/$c.dmb" --rsc "$OUT/$d.rsc" "$OUT/$c.rsc" --all --strict-order --context 2 > "$OUT/equiv-strict-$d.txt" 2>&1
   strict=$([ $? -eq 0 ] && echo EQUIVALENT || echo "NOT EQUIVALENT")
-  [ "$verdict" = EQUIVALENT ] || status=1
+  [ "$verdict" = EQUIVALENT ] && [ "$same" = identical ] || status=1
   log "$(printf '%-18s vs cold: %s, %s (strict order: %s)' "$d" "$same" "$verdict" "$strict")"
 }
 edit() {
@@ -107,5 +107,5 @@ for step in "${STEPS[@]}"; do
   cold_for_state
   compare "d-$step" "$COLD"
 done
-log "$([ $status -eq 0 ] && echo "ALL EQUIVALENT" || echo "SOME STEP NOT EQUIVALENT")"
+log "$([ $status -eq 0 ] && echo "ALL IDENTICAL" || echo "SOME STEP NOT BYTE-IDENTICAL")"
 exit $status
