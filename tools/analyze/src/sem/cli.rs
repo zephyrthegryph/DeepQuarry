@@ -532,9 +532,10 @@ pub fn gen(args: &[String], root: &Path) -> ExitCode {
             }
         }
     }
-    // The process ends right after this: freeing the model and every memo of the tree one allocation at a time takes seconds. The OS
-    // reclaims it at once.
-    std::mem::forget(last_tree);
+    // A one-shot process ends right after this: freeing the model and every memo of the tree one allocation at a time takes seconds,
+    // and the OS reclaims it at once. A host drops it (`dq_hostio::discard`): forgotten there, the tree and its hold on the
+    // model stayed for the life of the daemon, once per request.
+    dq_hostio::discard(last_tree);
     if unstable {
         ExitCode::from(3)
     } else if clean {

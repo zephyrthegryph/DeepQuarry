@@ -562,9 +562,9 @@ fn write(path: &std::path::Path, entries: &[Row<'_>], sem: &Sem) -> usize {
         if std::fs::write(&tmp, &bytes).is_ok() && std::fs::rename(&tmp, path).is_err() {
             let _ = std::fs::remove_file(&tmp);
         }
-        std::mem::forget(bytes);
+        dq_hostio::discard(bytes);
     }
-    std::mem::forget(st);
+    dq_hostio::discard(st);
     n
 }
 
@@ -618,14 +618,14 @@ pub fn finish() {
         all.sort_by(|a, b| a.0.cmp(b.0));
         let n = write(&dir.join(FILE), &all, sem);
         let _ = std::fs::remove_file(dir.join(DELTA));
-        std::mem::forget(all);
+        dq_hostio::discard(all);
         ("base", n)
     } else {
         let n = write(&dir.join(DELTA), &delta, sem);
-        std::mem::forget(delta);
+        dq_hostio::discard(delta);
         ("delta", n)
     };
-    std::mem::forget(fresh);
+    dq_hostio::discard(fresh);
     if trace() {
         eprintln!("analyze: walk cache: wrote the {} ({} walks) in {:.1?}", what, n, t0.elapsed());
     }

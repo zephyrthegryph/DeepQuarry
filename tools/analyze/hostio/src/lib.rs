@@ -29,6 +29,8 @@ pub struct Scope {
 }
 
 static SCOPE: RwLock<Option<Arc<Scope>>> = RwLock::new(None);
+/// Set by the first request scope and never cleared: this process hosts requests and lives on after each one.
+static HOST_PROCESS: std::sync::atomic::AtomicBool = std::sync::atomic::AtomicBool::new(false);
 /// Variables the request set for itself (`set_var`, `remove_var`), on top of its environment.
 static LOCAL: Mutex<Option<HashMap<String, Option<String>>>> = Mutex::new(None);
 /// Bumped whenever the environment a read would see may change, so values cached from it are computed again.
@@ -48,6 +50,7 @@ pub fn with_scope<R>(scope: Scope, f: impl FnOnce() -> R) -> R {
             GENERATION.fetch_add(1, Ordering::SeqCst);
         }
     }
+    HOST_PROCESS.store(true, Ordering::SeqCst);
     *SCOPE.write().unwrap_or_else(|e| e.into_inner()) = Some(Arc::new(scope));
     *LOCAL.lock().unwrap_or_else(|e| e.into_inner()) = Some(HashMap::new());
     *READS.lock().unwrap_or_else(|e| e.into_inner()) = Some(Default::default());
@@ -60,6 +63,23 @@ pub fn with_scope<R>(scope: Scope, f: impl FnOnce() -> R) -> R {
 /// Whether a request scope is installed (the code runs inside the daemon).
 pub fn hosted() -> bool {
     SCOPE.read().unwrap_or_else(|e| e.into_inner()).is_some()
+}
+
+/// Whether this process has ever run a request scope: it is a host that outlives its requests, also between two of them and on
+/// the threads a request leaves to finish. A one-shot run never sets it.
+pub fn host_process() -> bool {
+    HOST_PROCESS.load(Ordering::SeqCst)
+}
+
+/// Gives up `value` at the end of a run. A one-shot process is about to exit, so the value is forgotten: the OS reclaims it at
+/// once, where freeing a whole-tree model one allocation at a time takes seconds. A host lives on, so there the value is dropped;
+/// forgetting it would leak it on every request.
+pub fn discard<T>(value: T) {
+    if host_process() {
+        drop(value);
+    } else {
+        std::mem::forget(value);
+    }
 }
 
 /// Changes whenever the environment a read would see may have changed.
@@ -280,6 +300,23 @@ impl<T: Copy> Default for EnvCached<T> {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    /// A host outlives its requests, so what a run gives up there must be freed: forgetting it grew the daemon on every request.
+    #[test]
+    fn a_host_process_frees_what_a_run_discards() {
+        struct Counted(Arc<AtomicU64>);
+        impl Drop for Counted {
+            fn drop(&mut self) {
+                self.0.fetch_add(1, Ordering::SeqCst);
+            }
+        }
+        let dropped = Arc::new(AtomicU64::new(0));
+        // What the first request scope sets (set here directly: the other tests own the one scope slot).
+        HOST_PROCESS.store(true, Ordering::SeqCst);
+        assert!(host_process());
+        discard(Counted(dropped.clone()));
+        assert_eq!(dropped.load(Ordering::SeqCst), 1, "a host frees what a run discards, inside a request or between two");
+    }
 
     #[test]
     fn scope_captures_output_and_environment() {

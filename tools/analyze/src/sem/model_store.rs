@@ -415,7 +415,7 @@ fn load(path: &Path) -> Option<Base> {
     let slices: Vec<Option<Vec<dreammaker::objtree::Type>>> = super::par_map(&names, |p| {
         let b = std::fs::read(p).ok()?;
         let v = bincode::deserialize(&b).ok();
-        std::mem::forget(b);
+        dq_hostio::discard(b);
         v
     });
     let slices: Option<Vec<_>> = slices.into_iter().collect();
@@ -618,10 +618,10 @@ fn update(root: &Path, tree: &Tree, dme_path: &Path, mut s: Base, disk: Disk) ->
                     eprintln!("analyze: model store: wrote the delta ({} file(s), {} KB)", d.patches.len(), bytes.len() >> 10);
                 }
             }
-            std::mem::forget(d);
+            dq_hostio::discard(d);
         }
     } else {
-        std::mem::forget(patches);
+        dq_hostio::discard(patches);
     }
     let structure = s.structure;
     Ok((Parsed { objtree: s.objtree, files, errors: s.errors, env: Some(env), structure: Some(structure), defines: None, raw: None, fatal: false }, parsed, patched))
@@ -647,7 +647,7 @@ pub fn save_later(handle: std::sync::Arc<super::SemBox>) {
             let p = slice_path(&meta.path, generation, i);
             let tmp = p.with_extension(format!("tmp{}", std::process::id()));
             let done = std::fs::write(&tmp, &b).is_ok() && std::fs::rename(&tmp, &p).is_ok();
-            std::mem::forget(b);
+            dq_hostio::discard(b);
             done
         });
         if ok.iter().any(|o| !o) {
@@ -682,7 +682,7 @@ pub fn save_later(handle: std::sync::Arc<super::SemBox>) {
         if trace() {
             eprintln!("analyze: model store: wrote {} MB in {:.1?}", bytes.len() >> 20, t0.elapsed());
         }
-        std::mem::forget(bytes);
+        dq_hostio::discard(bytes);
     });
     if let Ok(t) = t {
         *WRITER.lock().unwrap() = Some(t);
